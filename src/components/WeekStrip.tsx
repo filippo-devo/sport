@@ -1,17 +1,21 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { TrainingDay } from '../data/training';
+import { useT } from '../i18n';
+import { dayKey } from '../lib/date';
+import type { PlanDay } from '../store/derived';
 import { colors, fonts, space, type } from '../theme/tokens';
 
 type Props = {
-  days: TrainingDay[];
+  days: PlanDay[];
   selectedKey: string;
   onSelect: (key: string) => void;
   width: number; // available content width
 };
 
 export function WeekStrip({ days, selectedKey, onSelect, width }: Props) {
-  const workouts = days.filter((d) => d.workout);
+  const { t, weekdayShort } = useT();
+  const todayKey = dayKey();
+  const workouts = days.filter((d) => d.routine || d.session);
   const done = workouts.filter((d) => d.status === 'done').length;
   // Day chips shrink on narrow phones (≈ 320 pt) but never exceed 40 pt.
   const chip = Math.min(40, Math.floor(width / 7) - 6);
@@ -19,10 +23,8 @@ export function WeekStrip({ days, selectedKey, onSelect, width }: Props) {
   return (
     <View>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>This week</Text>
-        <Text style={styles.count}>
-          {done} of {workouts.length} completed
-        </Text>
+        <Text style={styles.title}>{t('train.thisWeek')}</Text>
+        <Text style={styles.count}>{t('train.completed', { done, total: workouts.length })}</Text>
       </View>
 
       <View style={styles.segments}>
@@ -37,19 +39,20 @@ export function WeekStrip({ days, selectedKey, onSelect, width }: Props) {
       <View style={styles.days} accessibilityRole="tablist">
         {days.map((d) => {
           const selected = d.key === selectedKey;
-          const isToday = d.status === 'today';
+          const isToday = d.key === todayKey;
           const rest = d.status === 'rest';
+          const label = weekdayShort(d.date);
           return (
             <Pressable
               key={d.key}
               onPress={() => onSelect(d.key)}
               accessibilityRole="tab"
               accessibilityState={{ selected }}
-              accessibilityLabel={`${d.weekday} ${d.date}${rest ? ', rest day' : ''}${isToday ? ', today' : ''}`}
+              accessibilityLabel={`${label} ${d.date.getDate()}${isToday ? `, ${t('common.today')}` : ''}${rest ? `, ${t('train.restDay')}` : ''}`}
               style={styles.day}
               hitSlop={4}
             >
-              <Text style={[styles.weekday, isToday && styles.weekdayToday]}>{isToday ? 'Today' : d.weekday}</Text>
+              <Text style={[styles.weekday, isToday && styles.weekdayToday]}>{isToday ? t('common.today') : label}</Text>
               <View
                 style={[
                   styles.chip,
@@ -65,7 +68,7 @@ export function WeekStrip({ days, selectedKey, onSelect, width }: Props) {
                     selected && styles.dateSelected,
                   ]}
                 >
-                  {d.date}
+                  {d.date.getDate()}
                 </Text>
               </View>
               <View
@@ -73,6 +76,7 @@ export function WeekStrip({ days, selectedKey, onSelect, width }: Props) {
                   styles.dot,
                   d.status === 'done' && { backgroundColor: colors.success },
                   (d.status === 'planned' || d.status === 'today') && { backgroundColor: colors.textSecondary },
+                  d.status === 'missed' && { backgroundColor: colors.track },
                 ]}
               />
             </Pressable>

@@ -1,46 +1,57 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { Equipment, Exercise } from '../data/training';
+import { EXERCISE_BY_ID } from '../data/exercises';
+import type { RoutineItem, Units } from '../data/types';
+import { useT } from '../i18n';
+import { formatWeight } from '../lib/units';
 import { colors, fonts, radius, space, type } from '../theme/tokens';
 import { SetBars } from './SetBars';
 
-const equipmentLabel: Record<Equipment, string> = {
-  barbell: 'Barbell',
-  dumbbell: 'Dumbbells',
-  cable: 'Cable',
-  kettlebell: 'Kettlebell',
-  machine: 'Machine',
-  bodyweight: 'Bodyweight',
+type Props = {
+  item: Pick<RoutineItem, 'exerciseId' | 'sets' | 'target'>;
+  index: number;
+  /** Last working weight in kg, shown after reps. */
+  weight?: number;
+  units: Units;
+  onPress?: () => void;
 };
-
-type Props = { exercise: Exercise; index: number };
 
 // Mirrors Gravl's exercise row: square media tile, name, then
 // "III 3 sets · 10–8 reps · 12 kg" in the secondary tone.
-export function ExerciseRow({ exercise: e, index }: Props) {
-  const meta = [`${e.sets} sets`, `${e.reps} reps`, e.weight].filter(Boolean).join(' · ');
+export function ExerciseRow({ item, index, weight, units, onPress }: Props) {
+  const { t, tn, L } = useT();
+  const e = EXERCISE_BY_ID[item.exerciseId];
+  if (!e) return null;
+  const reps = e.tracking === 'time' ? t('unit.secRange', { r: item.target }) : t('unit.repsRange', { r: item.target });
+  const meta = [tn('unit.sets', item.sets), reps, weight ? formatWeight(weight, units) : undefined].filter(Boolean).join(' · ');
 
   return (
-    <View style={styles.row} accessible accessibilityLabel={`${index + 1}. ${e.name}, ${meta}`}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={`${index + 1}. ${L(e.name)}, ${meta}`}
+    >
       <View style={styles.tile}>
         <Text style={styles.index}>{String(index + 1).padStart(2, '0')}</Text>
         <View style={styles.tileRule} />
       </View>
       <View style={styles.text}>
         <Text style={styles.kicker} numberOfLines={1}>
-          {e.muscle} · {equipmentLabel[e.equipment]}
+          {t(`muscle.${e.muscle}`)} · {t(`equipment.${e.equipment}`)}
         </Text>
         <Text style={styles.name} numberOfLines={2}>
-          {e.name}
+          {L(e.name)}
         </Text>
         <View style={styles.metaRow}>
-          <SetBars sets={e.sets} />
+          <SetBars sets={item.sets} />
           <Text style={styles.meta} numberOfLines={1}>
             {meta}
           </Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

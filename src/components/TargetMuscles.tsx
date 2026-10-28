@@ -1,23 +1,27 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { TargetMuscle } from '../data/training';
+import type { Muscle } from '../data/types';
+import { useT } from '../i18n';
 import { colors, radius, space, type } from '../theme/tokens';
 import { RecoveryRing } from './RecoveryRing';
 
+export type TargetMuscle = { muscle: Muscle; recovery: number };
+
 // "Target muscles" row from Gravl's workout detail: tile, name, green %.
 export function TargetMuscles({ muscles }: { muscles: TargetMuscle[] }) {
+  const { t } = useT();
   return (
     <View>
-      <Text style={styles.title}>Target muscles</Text>
+      <Text style={styles.title}>{t('train.targetMuscles')}</Text>
       <View style={styles.row}>
         {muscles.map((m) => (
-          <View key={m.name} style={styles.item}>
+          <View key={m.muscle} style={styles.item}>
             <View style={styles.tile}>
               <RecoveryRing value={m.recovery} size={26} stroke={2.5} showValue={false} />
             </View>
             <View style={styles.text}>
               <Text style={styles.name} numberOfLines={1}>
-                {m.name}
+                {t(`muscle.${m.muscle}`)}
               </Text>
               <Text style={styles.pct}>{m.recovery}%</Text>
             </View>

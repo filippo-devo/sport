@@ -2,18 +2,18 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { colors, layout, radius, type } from '../theme/tokens';
 
-type Props = { bottom: number };
+type Props = { bottom: number; label: string; onPress: () => void };
 
 // Primary volt CTA floating above the tab bar, as in Gravl.
-// Starting a workout is out of scope for now, so the press only gives feedback.
-export function StartWorkoutButton({ bottom }: Props) {
+export function StartWorkoutButton({ bottom, label, onPress }: Props) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Start workout"
+      accessibilityLabel={label}
+      onPress={onPress}
       style={({ pressed }) => [styles.button, { bottom }, pressed && styles.pressed]}
     >
-      <Text style={styles.label}>Start workout</Text>
+      <Text style={styles.label}>{label}</Text>
     </Pressable>
   );
 }

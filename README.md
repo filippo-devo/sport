@@ -1,10 +1,8 @@
-# Training app — screen 1: Training
+# GameChanger
 
-Expo (SDK 58) + Expo Router + TypeScript. UI only, no backend; demo data lives in `src/data/training.ts`.
-
-Only the **Train** tab exists. Progress, Food, Library and Profile are drawn in the
-tab bar but are not pressable and have no routes. `Start workout` gives press
-feedback only.
+Training, nutrition and progress tracker. Expo SDK 58, Expo Router, TypeScript.
+All data is stored on the device (AsyncStorage via zustand `persist`); there is no backend.
+UI in English and Polish (Profile → Language).
 
 ## Run
 
@@ -13,28 +11,47 @@ npm install
 npx expo start        # scan the QR code with Expo Go, or press w for the web preview
 ```
 
-Web build: `npx expo export --platform web` → `dist/`.
+- `npm run typecheck` / `npx expo lint`
+- `npm run preview:build` → `design/preview/training.html`, a single self-contained HTML file of the whole app (no server needed)
+- Every push to `main` publishes an EAS Update (`.github/workflows/eas-update.yml`, needs the `EXPO_TOKEN` secret)
 
-Single-file preview (JS and fonts inlined, opens without a server):
-`npm run preview:build` → `design/preview/training.html`. It is built from
-`preview/entry.tsx`, which renders the same Training screen without the router.
+## Screens
+
+Tabs: **Today · Train · Progress · Food · Library**. Profile opens from the avatar in each header.
+
+| Route | Screen |
+| --- | --- |
+| `/` | Today: calorie / training / steps rings, today's workout, macros, streak, body weight, quick actions |
+| `/train` | Week strip, workout of the selected day, target-muscle recovery, exercise list, plan, empty workout |
+| `/plans`, `/plans/[id]` | Training plans, weekly schedule, choose the active plan |
+| `/routine/[id]` | Workout preview and start |
+| `/workout` | Live logger: sets × weight × reps (or seconds), previous values, rest timer (−15/+15/skip), add/remove sets and exercises, finish/discard |
+| `/session/[id]` | Post-workout summary (PRs, volume, sets) and history detail |
+| `/progress` | Strength (est. 1RM), weekly volume, body weight vs goal, calories vs goal, personal records, history, physique photos |
+| `/history` | All workouts by month |
+| `/photo/[id]` | Physique photo viewer |
+| `/food` | Day navigation, calorie + P/C/F rings, meals by Breakfast / Lunch / Dinner / Snacks |
+| `/meal/[id]` | Diary entry detail (energy, macro split, fibre, sugar, per 100 g) |
+| `/add-meal` | Add meal (UI only for now: search, barcode, quick add, photo; logging comes next) |
+| `/food-history` | Daily history (kcal vs goal, macros) |
+| `/library`, `/exercise/[id]` | 64 exercises with search, muscle and equipment filters; detail with steps, muscles, 1RM chart, set records, history |
+| `/exercise-picker` | Add an exercise to the running workout |
+| `/profile` | Name, goals (kcal, macros, target weight, workouts/week, steps), language, units (kg/lb), default rest, haptics, data reset |
 
 ## Structure
 
-- `src/theme/tokens.ts` — shared design tokens (colors, type, spacing, radii, layout)
-- `src/app/index.tsx` — Training screen
-- `src/components/` — WeekStrip, WorkoutCard, TargetMuscles, ExerciseRow, StartWorkoutButton, TabBar
-- `design/reference/` — Gravl screenshots the tokens were sampled from
+- `src/app/` — routes (Expo Router)
+- `src/components/` — shared UI (`ui/` primitives, `workout/` logger parts, Gravl-style cards and rows)
+- `src/data/` — types and seed data: exercises (EN/PL), foods, plans, generated sample history
+- `src/store/` — persisted store (`index.ts`), derived calculations (`derived.ts`), transient UI state (`ui.ts`)
+- `src/i18n/` — `en.ts` / `pl.ts` dictionaries with plural forms
+- `src/theme/tokens.ts` — design tokens (colours sampled from the Gravl reference screenshots in `design/reference/`)
+
+On first launch the app is seeded with eight weeks of sample workouts, weigh-ins and two weeks of meals so the
+charts have data. Profile → "Clear sample data" removes them; your own entries stay.
 
 ## References
 
-- **Gravl** (user-supplied screenshots in `design/reference/`): every color was
-  pixel-sampled from them, and the typeface is Barlow. The layout follows them
-  too: floating glass tab bar with a dark active capsule, volt CTA pill, featured
-  workout card with a volt badge and a "Recovered" ring pill, "Target muscles" row,
-  and the exercise rows ("III 3 sets · 10–8 reps · 12 kg").
-- Mobbin (Gravl is not on Mobbin, so these were used for individual elements):
-  - Day selector: [Apple Fitness – plan week](https://mobbin.com/screens/eac5518f-afb2-4ddc-9fdf-9680fb1bc1d4), [Runna – today](https://mobbin.com/screens/20751c4f-c638-4561-8220-00beafe536e7)
-  - Floating tab bar: [Apple Fitness+](https://mobbin.com/screens/eaea5c61-75fc-43ea-9fce-d39536d9f91e), [The Outsiders](https://mobbin.com/screens/e0516904-d4b6-45a0-bd41-c9affcc7d3a1)
-  - Hero card + CTA: [Ladder](https://mobbin.com/screens/4f68e1bb-7f3a-4452-bcb2-e1d70c4dcc42), [pliability](https://mobbin.com/screens/57c88c75-a186-415a-a792-d02ee6325880)
-  - Exercise list: [Peloton Strength+](https://mobbin.com/screens/a736b4f4-3800-4fbb-8110-4956c2ffb4d9), [Peloton Strength+ generator](https://mobbin.com/screens/e6d580a0-9844-40fc-89c0-d7026da92cf9)
+Gravl (colours, type, cards, tab bar) plus Mobbin patterns from Hevy (live logger, rest timer, set records),
+Fitbod (library filters), Cal AI and MacroFactor (calorie and macro rings, day strip), MyFitnessPal (meal groups)
+and WHOOP (three daily rings).

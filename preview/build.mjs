@@ -1,5 +1,5 @@
 // Builds design/preview/training.html: one self-contained file (JS + Barlow
-// fonts inlined) that renders the Training screen with no server.
+// fonts inlined) that runs the whole app with no server.
 // Usage: npm run preview:build
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -11,10 +11,16 @@ const outDir = path.join(root, 'node_modules/.cache/preview-dist');
 const outFile = path.join(root, 'design/preview/training.html');
 const FONTS = ['Barlow_400Regular', 'Barlow_500Medium', 'Barlow_600SemiBold', 'Barlow_700Bold'];
 
-// `expo export` bundles package.json#main, so point it at the preview entry for the build.
+// `expo export` bundles package.json#main, so point it at the preview entry, and turn off
+// async routes so the whole app lands in one bundle. Both files are restored afterwards.
+const appPath = path.join(root, 'app.json');
 const pkgSource = fs.readFileSync(pkgPath, 'utf8');
+const appSource = fs.readFileSync(appPath, 'utf8');
 try {
   fs.writeFileSync(pkgPath, JSON.stringify({ ...JSON.parse(pkgSource), main: './preview/entry.tsx' }, null, 2) + '\n');
+  const app = JSON.parse(appSource);
+  app.expo.plugins = app.expo.plugins.map((p) => (p === 'expo-router' ? ['expo-router', { asyncRoutes: false }] : p));
+  fs.writeFileSync(appPath, JSON.stringify(app, null, 2) + '\n');
   fs.rmSync(outDir, { recursive: true, force: true });
   execSync(`npx expo export --platform web --output-dir "${outDir}"`, {
     cwd: root,
@@ -23,6 +29,7 @@ try {
   });
 } finally {
   fs.writeFileSync(pkgPath, pkgSource);
+  fs.writeFileSync(appPath, appSource);
 }
 
 let html = fs.readFileSync(path.join(outDir, 'index.html'), 'utf8');

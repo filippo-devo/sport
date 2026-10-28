@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Sport",
+    "name": "GameChanger",
     "slug": "sport",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -25,18 +25,28 @@
     },
     "plugins": [
       "expo-font",
-      "expo-router"
+      "expo-router",
+      "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "GameChanger uses your photos to save physique progress pictures.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "GameChanger reads your step count to show daily steps."
+        }
+      ]
     ],
     "scheme": "sport",
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "extra": {
-      "router": {
-        "asyncRoutes": {
-          "web": true
-        }
-      },
       "eas": {
         "projectId": "5335c8ed-2d10-44d3-87f0-08c17aa17cc1"
       }

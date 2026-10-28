@@ -1,58 +1,72 @@
-// Deep imports keep the other ~9k Phosphor icons out of the bundle.
-import { CheckIcon } from 'phosphor-react-native/src/icons/Check';
-import { MoonIcon } from 'phosphor-react-native/src/icons/Moon';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 
-import { totalSets, type TrainingDay } from '../data/training';
+import { useT } from '../i18n';
+import { routineMinutes, routineMuscles, routineSets, type PlanDay } from '../store/derived';
 import { colors, fonts, radius, space, type } from '../theme/tokens';
+import { CheckIcon, MoonIcon } from './icons';
 import { RecoveryRing } from './RecoveryRing';
 
 type Props = {
-  day: TrainingDay;
+  day: PlanDay;
+  /** Average recovery of the routine's muscles, 0–100. */
+  recovery?: number;
   compact: boolean; // narrow phones get a slightly smaller hero title
   short: boolean; // short phones (SE-class) get a tighter card
+  onPress?: () => void;
 };
 
 // Featured card for the selected day. Gravl uses a full-bleed trainer photo
 // here; without licensed imagery we keep the same frame (24 pt radius,
 // hairline stroke, volt badge, recovery pill) over a layered volt glow.
-export function WorkoutCard({ day, compact, short }: Props) {
-  const w = day.workout;
+export function WorkoutCard({ day, recovery, compact, short, onPress }: Props) {
+  const { t, tn, L, weekdayShort, dateShort } = useT();
+  const r = day.routine;
+  const s = day.session;
+  const label = `${weekdayShort(day.date)} ${dateShort(day.date)}`;
+  const minutes = s ? Math.round((s.endedAt - s.startedAt) / 60000) : r ? routineMinutes(r) : 0;
+  const exercises = s ? s.exercises.length : r?.items.length ?? 0;
+  const sets = s ? s.exercises.reduce((n, e) => n + e.sets.length, 0) : r ? routineSets(r) : 0;
 
   return (
-    <View style={[styles.card, short && styles.cardShort]}>
-      <CardBackdrop muted={!w || day.status === 'done'} />
+    <Pressable
+      disabled={!onPress}
+      onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      style={({ pressed }) => [styles.card, short && styles.cardShort, pressed && { opacity: 0.92 }]}
+    >
+      <CardBackdrop muted={!r && !s ? true : day.status === 'done'} />
 
-      <Badge status={day.status} label={`${day.weekday} ${day.date}`} />
+      <Badge status={day.status} label={label} />
 
-      {w ? (
+      {r || s ? (
         <View style={[styles.body, short && styles.bodyShort]}>
-          <Text style={[styles.title, compact && styles.titleCompact]}>{w.name}</Text>
-          <Text style={styles.muscles}>{w.muscles.map((m) => m.name).join(', ')}</Text>
+          <Text style={[styles.title, compact && styles.titleCompact]}>{L(s?.name ?? r!.name)}</Text>
+          {r && <Text style={styles.muscles}>{routineMuscles(r).slice(0, 3).map((m) => t(`muscle.${m}`)).join(', ')}</Text>}
           <Text style={styles.meta}>
-            {w.durationMin} mins  •  {w.exercises.length} exercises  •  {totalSets(w)} sets
+            {t('unit.min', { n: minutes })}  •  {tn('unit.exercises', exercises)}  •  {tn('unit.sets', sets)}
           </Text>
-          <RecoveredPill value={Math.round(w.muscles.reduce((s, m) => s + m.recovery, 0) / w.muscles.length)} />
+          {recovery != null && day.status !== 'done' && <RecoveredPill value={recovery} />}
         </View>
       ) : (
         <View style={[styles.body, short && styles.bodyShort]}>
           <View style={styles.restIcon}>
             <MoonIcon size={22} color={colors.textPrimary} weight="fill" />
           </View>
-          <Text style={[styles.title, compact && styles.titleCompact]}>Rest day</Text>
-          <Text style={styles.meta}>Recovery is part of the plan. Light walking and mobility are fine.</Text>
+          <Text style={[styles.title, compact && styles.titleCompact]}>{t('train.restDay')}</Text>
+          <Text style={styles.meta}>{t('train.restBody')}</Text>
         </View>
       )}
-    </View>
+    </Pressable>
   );
 }
 
-function Badge({ status, label }: { status: TrainingDay['status']; label: string }) {
+function Badge({ status, label }: { status: PlanDay['status']; label: string }) {
+  const { t } = useT();
   if (status === 'today') {
     return (
       <View style={[styles.badge, styles.badgeAccent]}>
-        <Text style={[styles.badgeText, { color: colors.textOnAccent }]}>TODAY'S WORKOUT</Text>
+        <Text style={[styles.badgeText, { color: colors.textOnAccent }]}>{t('train.badgeToday')}</Text>
       </View>
     );
   }
@@ -60,24 +74,24 @@ function Badge({ status, label }: { status: TrainingDay['status']; label: string
     return (
       <View style={[styles.badge, styles.badgeMuted]}>
         <CheckIcon size={13} color={colors.success} weight="bold" />
-        <Text style={[styles.badgeText, { color: colors.success }]}>COMPLETED</Text>
+        <Text style={[styles.badgeText, { color: colors.success }]}>{t('train.badgeDone')}</Text>
       </View>
     );
   }
+  const key = status === 'rest' ? 'train.badgeRest' : status === 'missed' ? 'train.badgeMissed' : 'train.badgePlanned';
   return (
     <View style={[styles.badge, styles.badgeMuted]}>
-      <Text style={[styles.badgeText, { color: colors.textPrimary }]}>
-        {status === 'rest' ? 'RECOVERY' : 'PLANNED'} · {label.toUpperCase()}
-      </Text>
+      <Text style={[styles.badgeText, { color: colors.textPrimary }]}>{t(key, { day: label.toUpperCase() })}</Text>
     </View>
   );
 }
 
 function RecoveredPill({ value }: { value: number }) {
+  const { t } = useT();
   return (
     <View style={styles.pill}>
       <RecoveryRing value={value} size={34} stroke={2.5} />
-      <Text style={styles.pillText}>{value === 100 ? 'Fully recovered' : 'Recovered'}</Text>
+      <Text style={styles.pillText}>{value === 100 ? t('train.fullyRecovered') : t('train.recovered')}</Text>
     </View>
   );
 }

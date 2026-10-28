@@ -1,64 +1,68 @@
 import { BlurView } from 'expo-blur';
-// Deep imports keep the other ~9k Phosphor icons out of the bundle.
-import { BarbellIcon } from 'phosphor-react-native/src/icons/Barbell';
-import { BooksIcon } from 'phosphor-react-native/src/icons/Books';
-import { ChartLineUpIcon } from 'phosphor-react-native/src/icons/ChartLineUp';
-import { ForkKnifeIcon } from 'phosphor-react-native/src/icons/ForkKnife';
-import { UserIcon } from 'phosphor-react-native/src/icons/User';
-import { type Icon } from 'phosphor-react-native';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import type { BottomTabBarProps } from 'expo-router/tabs';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useT, type TKey } from '../i18n';
 import { colors, layout, radius, type } from '../theme/tokens';
+import { ActiveWorkoutBar } from './ActiveWorkoutBar';
+import { BarbellIcon, BooksIcon, ChartLineUpIcon, ForkKnifeIcon, HouseSimpleIcon, type Icon } from './icons';
+import { BottomFade, useLayout } from './ui/layout';
 
-type Tab = { key: string; label: string; icon: Icon; enabled: boolean };
+// Route name → label and icon. Order follows the Tabs layout.
+const TABS: Record<string, { label: TKey; icon: Icon }> = {
+  index: { label: 'tabs.today', icon: HouseSimpleIcon },
+  train: { label: 'tabs.train', icon: BarbellIcon },
+  progress: { label: 'tabs.progress', icon: ChartLineUpIcon },
+  food: { label: 'tabs.food', icon: ForkKnifeIcon },
+  library: { label: 'tabs.library', icon: BooksIcon },
+};
 
-// Order is fixed: Train is the only screen that exists for now. The other
-// four are rendered for layout only — no press handler, no route.
-const TABS: Tab[] = [
-  { key: 'train', label: 'Train', icon: BarbellIcon, enabled: true },
-  { key: 'progress', label: 'Progress', icon: ChartLineUpIcon, enabled: false },
-  { key: 'food', label: 'Food', icon: ForkKnifeIcon, enabled: false },
-  { key: 'library', label: 'Library', icon: BooksIcon, enabled: false },
-  { key: 'profile', label: 'Profile', icon: UserIcon, enabled: false },
-];
+/** Floating glass tab bar with a dark active capsule (Gravl). */
+export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
+  const { t } = useT();
+  const { tabBarBottom, frameWidth } = useLayout();
+  const width = Math.min(frameWidth - layout.tabBarInset * 2, 420);
 
-type Props = { active: string; bottomInset: number; width: number };
-
-export function TabBar({ active, bottomInset, width }: Props) {
   return (
-    <View
-      style={[styles.wrap, { bottom: Math.max(bottomInset, 12), width }]}
-      accessibilityRole="tablist"
-    >
-      {Platform.OS === 'android' ? (
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.tabBar }]} />
-      ) : (
-        <>
-          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.tabBarGlass }]} />
-        </>
-      )}
+    <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+      <BottomFade height={tabBarBottom + layout.tabBarHeight + 28} />
+      <ActiveWorkoutBar bottom={tabBarBottom + layout.tabBarHeight + 10} width={width} />
+      <View style={[styles.wrap, { bottom: tabBarBottom, width }]} accessibilityRole="tablist">
+        {Platform.OS === 'android' ? (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.tabBar }]} />
+        ) : (
+          <>
+            <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.tabBarGlass }]} />
+          </>
+        )}
 
-      {TABS.map(({ key, label, icon: Glyph, enabled }) => {
-        const isActive = key === active;
-        return (
-          <View
-            key={key}
-            style={styles.item}
-            accessible
-            accessibilityRole="tab"
-            accessibilityLabel={enabled ? label : `${label}, unavailable`}
-            accessibilityState={{ selected: isActive, disabled: !enabled }}
-          >
-            <View style={[styles.capsule, isActive && styles.capsuleActive]}>
-              <Glyph size={25} color={colors.tabLabel} weight={isActive ? 'fill' : 'regular'} />
-              <Text style={styles.label} numberOfLines={1}>
-                {label}
-              </Text>
-            </View>
-          </View>
-        );
-      })}
+        {state.routes.map((route, i) => {
+          const tab = TABS[route.name];
+          if (!tab) return null;
+          const active = i === state.index;
+          const Glyph = tab.icon;
+          return (
+            <Pressable
+              key={route.key}
+              style={styles.item}
+              accessibilityRole="tab"
+              accessibilityLabel={t(tab.label)}
+              accessibilityState={{ selected: active }}
+              onPress={() => {
+                if (!active) navigateToTab(route.key);
+              }}
+            >
+              <View style={[styles.capsule, active && styles.capsuleActive]}>
+                <Glyph size={24} color={colors.tabLabel} weight={active ? 'fill' : 'regular'} />
+                <Text style={styles.label} numberOfLines={1}>
+                  {t(tab.label)}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -76,13 +80,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.10)',
   },
   item: { flex: 1 },
-  capsule: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    borderRadius: radius.pill,
-  },
+  capsule: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, borderRadius: radius.pill },
   capsuleActive: { backgroundColor: colors.tabActive },
   label: { ...type.tab, color: colors.tabLabel },
 });

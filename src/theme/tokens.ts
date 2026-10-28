@@ -26,6 +26,13 @@ export const palette = {
   volt: '#DBFD52', // brand accent: CTA, "NEXT WORKOUT" badge, "+" and "…" glyphs
   navy: '#091634', // text on volt (CTA label, badge label)
   green: '#5EC269', // recovery %, recovery ring
+
+  // Not in the Gravl references (it has no nutrition UI): chosen to sit with volt
+  // on ink — warm/cool/neutral hues at similar lightness so no macro dominates.
+  coral: '#FF7A66', // protein
+  amber: '#F5C451', // carbs
+  sky: '#6FB2FF', // fat
+  red: '#FF5A5F', // destructive actions
 } as const;
 
 export const colors = {
@@ -43,6 +50,11 @@ export const colors = {
 
   accent: palette.volt,
   success: palette.green,
+  danger: palette.red,
+  protein: palette.coral,
+  carbs: palette.amber,
+  fat: palette.sky,
+  scrim: 'rgba(3,6,10,0.72)',
 
   hairline: 'rgba(255,255,255,0.08)',
   cardStroke: 'rgba(255,255,255,0.12)', // ≈ #3F4041 measured on the photo card edge
@@ -100,6 +112,7 @@ export const layout = {
   maxContentWidth: 480, // keeps the phone layout intact on tablets / desktop web
   control: 44, // circular glass buttons (≈ 44 pt)
   tabBarHeight: 62, // floating bar ≈ 60 pt, inset ≈ 21 pt from screen edges
+  navBar: 56,
   tabBarInset: 20,
   ctaHeight: 52,
 } as const;
