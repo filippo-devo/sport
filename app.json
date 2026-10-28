@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Training",
-    "slug": "training-app",
+    "name": "Sport",
+    "slug": "sport",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -27,6 +27,9 @@
       "expo-font",
       "expo-router"
     ],
-    "scheme": "training"
+    "scheme": "sport",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }

@@ -1,0 +1,52 @@
+# Publishes the app to Expo (EAS Update) on every push to main.
+# Requires the EXPO_TOKEN repository secret (expo.dev → Access tokens).
+name: EAS Update
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write # the first run commits the EAS project link back to main
+
+concurrency:
+  group: eas-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      # First run only: create/link the project on expo.dev, add the EAS Update
+      # config (updates.url, eas.json channels) and commit it so later runs reuse it.
+      - name: Link EAS project
+        run: |
+          if node -e "process.exit(require('./app.json').expo.extra?.eas?.projectId ? 0 : 1)"; then
+            echo "Already linked."
+            exit 0
+          fi
+          eas init --non-interactive --force
+          eas update:configure --non-interactive
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Link EAS project and configure EAS Update [skip ci]"
+          git push
+
+      - name: Publish update
+        run: eas update --auto --non-interactive
