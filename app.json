@@ -30,6 +30,20 @@
     "scheme": "sport",
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "5335c8ed-2d10-44d3-87f0-08c17aa17cc1"
+      }
+    },
+    "owner": "filiocha",
+    "updates": {
+      "url": "https://u.expo.dev/5335c8ed-2d10-44d3-87f0-08c17aa17cc1"
     }
   }
 }
