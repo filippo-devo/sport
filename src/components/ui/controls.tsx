@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   },
   buttonSm: { height: 38, paddingHorizontal: space.md },
   secondary: { backgroundColor: colors.control, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.hairline },
-  dangerBg: { backgroundColor: 'rgba(255,90,95,0.12)' },
+  dangerBg: { backgroundColor: 'rgba(239,68,68,0.12)' },
   ghost: { backgroundColor: 'transparent', paddingHorizontal: space.sm },
   buttonLabel: { ...type.button },
   buttonLabelSm: { fontSize: 15 },

@@ -5,7 +5,7 @@ import { formatNumber } from '../../lib/units';
 import { colors, fonts, radius } from '../../theme/tokens';
 
 // Dimmer than secondary text so last-time hints don't read as entered values.
-const PLACEHOLDER = 'rgba(172,182,195,0.42)';
+const PLACEHOLDER = 'rgba(170,183,196,0.42)';
 
 type Props = {
   value?: number;

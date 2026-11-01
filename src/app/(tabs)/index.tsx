@@ -233,7 +233,7 @@ function QuickAction({ icon: Glyph, label, onPress, accent }: { icon: Icon; labe
       onPress={onPress}
       style={({ pressed }) => [styles.quick, accent && styles.quickAccent, pressed && { opacity: 0.85 }]}
     >
-      <View style={[styles.quickIcon, accent && { backgroundColor: 'rgba(9,22,52,0.12)' }]}>
+      <View style={[styles.quickIcon, accent && { backgroundColor: 'rgba(9,16,23,0.12)' }]}>
         <Glyph size={20} color={accent ? colors.textOnAccent : colors.accent} weight="bold" />
       </View>
       <Text style={[styles.quickLabel, accent && { color: colors.textOnAccent }]} numberOfLines={2}>

@@ -9,30 +9,33 @@
  */
 
 export const palette = {
-  ink950: '#0A0F16', // screen background (both screens)
-  ink900: '#10171F', // flat cards: "6 new exercises", muscle tiles, "+"/"…" buttons
-  ink850: '#141C25', // tile edges / raised surface
-  ink800: '#151C23', // "Get started challenge" card fill
-  ink700: '#282F37', // circular glass controls (back, more, filter), "Gym Profile" pill
-  ink650: '#2D3239', // "Recovered" pill on the workout card
-  ink600: '#373C42', // inactive week progress segment
-  tabBar: '#2A323A', // floating tab bar (sampled over dark content)
-  tabActive: '#141E29', // active tab capsule
+  // Brand colours set by Filip (2026-11-01): background #091017, accent #D2FE08,
+  // stats #21C45C, text #FFFFFF / #AAB7C4. Surfaces keep Gravl's steps above the background.
+  ink950: '#091017', // screen background
+  ink900: '#0F1821', // flat cards: "6 new exercises", muscle tiles, "+"/"…" buttons
+  ink850: '#131D27', // tile edges / raised surface
+  ink800: '#141E28', // "Get started challenge" card fill
+  ink700: '#26303A', // circular glass controls (back, more, filter), "Gym Profile" pill
+  ink650: '#2B343D', // "Recovered" pill on the workout card
+  ink600: '#353D46', // inactive week progress segment
+  tabBar: '#26303A', // opaque bar surfaces (rest timer)
 
-  white: '#FFFFFF', // tab labels/icons
-  fog100: '#EAEEF3', // primary text (titles, exercise names)
-  fog400: '#ACB6C3', // secondary text, meta rows, active progress segment
+  white: '#FFFFFF', // primary text, tab labels/icons
+  fog400: '#AAB7C4', // secondary text, meta rows, active progress segment
 
-  volt: '#DBFD52', // brand accent: CTA, "NEXT WORKOUT" badge, "+" and "…" glyphs
-  navy: '#091634', // text on volt (CTA label, badge label)
-  green: '#5EC269', // recovery %, recovery ring
+  volt: '#D2FE08', // brand accent: CTA, "NEXT WORKOUT" badge, "+" and "…" glyphs
+  navy: '#091017', // text on volt (CTA label, badge label)
+  // Status scale for recovery and stats. Green is the given #21C45C; yellow and red
+  // share its saturation and weight so the three read as one set on the dark background.
+  green: '#21C45C', // recovered / good
+  yellow: '#F5B70A', // partly recovered / warning
 
   // Not in the Gravl references (it has no nutrition UI): chosen to sit with volt
   // on ink — warm/cool/neutral hues at similar lightness so no macro dominates.
   coral: '#FF7A66', // protein
   amber: '#F5C451', // carbs
   sky: '#6FB2FF', // fat
-  red: '#FF5A5F', // destructive actions
+  red: '#EF4444', // not recovered, destructive actions
 } as const;
 
 export const colors = {
@@ -44,12 +47,13 @@ export const colors = {
   pill: palette.ink650,
   track: palette.ink600,
 
-  textPrimary: palette.fog100,
+  textPrimary: palette.white,
   textSecondary: palette.fog400,
   textOnAccent: palette.navy,
 
   accent: palette.volt,
   success: palette.green,
+  warning: palette.yellow,
   danger: palette.red,
   protein: palette.coral,
   carbs: palette.amber,
@@ -58,11 +62,12 @@ export const colors = {
 
   hairline: 'rgba(255,255,255,0.08)',
   cardStroke: 'rgba(255,255,255,0.12)', // ≈ #3F4041 measured on the photo card edge
-  accentStroke: 'rgba(219,253,82,0.55)', // challenge card outline (volt over ink)
+  accentStroke: 'rgba(210,254,8,0.55)', // challenge card outline (volt over ink)
 
   tabBar: palette.tabBar,
-  tabBarGlass: 'rgba(42,50,58,0.78)', // tabBar color, translucent over a blur
-  tabActive: palette.tabActive,
+  tabBarGlass: 'rgba(30,40,50,0.42)', // Liquid Glass tint over the blur
+  tabBarGlassSolid: 'rgba(22,30,38,0.72)', // Android: no live blur, so a denser tint
+  tabActive: 'rgba(255,255,255,0.12)', // selected tab capsule, lighter glass
   tabLabel: palette.white,
 } as const;
 
@@ -116,3 +121,10 @@ export const layout = {
   tabBarInset: 20,
   ctaHeight: 52,
 } as const;
+
+/** Status colour for a 0–100 score (recovery): green from 80, yellow from 50, red below. */
+export function statusColor(value: number): string {
+  if (value >= 80) return colors.success;
+  if (value >= 50) return colors.warning;
+  return colors.danger;
+}

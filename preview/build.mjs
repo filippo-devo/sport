@@ -59,7 +59,7 @@ var txt=Document.prototype.createTextNode;Document.prototype.createTextNode=func
 
 html = html
   .replace(/<script src="\/_expo\/[^"]+" defer><\/script>/g, '')
-  .replace('<link rel="icon" href="/favicon.ico"/>', '<style>html,body{background:#0A0F16;margin:0}</style>')
+  .replace('<link rel="icon" href="/favicon.ico"/>', '<style>html,body{background:#091017;margin:0}</style>')
   .replace('</body>', () => `${fontPatch}<script>${js}</script>\n</body>`);
 
 fs.mkdirSync(path.dirname(outFile), { recursive: true });

@@ -131,7 +131,7 @@ export function BarChart({ values, labels = [], height = 140, color = colors.acc
         {values.map((v, i) => {
           const x = i * slot + (slot - barW) / 2;
           const muted = goal != null ? v < goal * 0.9 || v > goal * 1.1 : highlightLast && i !== n - 1;
-          const fill = v === 0 ? colors.track : muted ? 'rgba(219,253,82,0.38)' : color;
+          const fill = v === 0 ? colors.track : muted ? 'rgba(210,254,8,0.38)' : color;
           const h = Math.max(v > 0 ? 3 : 2, height - padB - sy(v));
           return <Rect key={i} x={x} y={height - padB - h} width={barW} height={h} rx={Math.min(4, barW / 2)} fill={fill} />;
         })}

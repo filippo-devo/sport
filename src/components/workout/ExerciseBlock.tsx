@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   tableHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: 2 },
   th: { fontFamily: fonts.semibold, fontSize: 11, letterSpacing: 0.6, color: colors.textSecondary, textAlign: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: 4, paddingHorizontal: 2, borderRadius: radius.sm },
-  rowDone: { backgroundColor: 'rgba(219,253,82,0.08)' },
+  rowDone: { backgroundColor: 'rgba(210,254,8,0.08)' },
   colSet: { width: 34, alignItems: 'center' },
   colPrev: { flex: 1.25, minWidth: 0 },
   colNum: { flex: 1, minWidth: 0 },

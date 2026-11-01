@@ -2,12 +2,12 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import type { Muscle } from '../data/types';
 import { useT } from '../i18n';
-import { colors, radius, space, type } from '../theme/tokens';
+import { colors, radius, space, statusColor, type } from '../theme/tokens';
 import { RecoveryRing } from './RecoveryRing';
 
 export type TargetMuscle = { muscle: Muscle; recovery: number };
 
-// "Target muscles" row from Gravl's workout detail: tile, name, green %.
+// "Target muscles" row from Gravl's workout detail: tile, name, recovery % in its status colour.
 export function TargetMuscles({ muscles }: { muscles: TargetMuscle[] }) {
   const { t } = useT();
   return (
@@ -23,7 +23,7 @@ export function TargetMuscles({ muscles }: { muscles: TargetMuscle[] }) {
               <Text style={styles.name} numberOfLines={1}>
                 {t(`muscle.${m.muscle}`)}
               </Text>
-              <Text style={styles.pct}>{m.recovery}%</Text>
+              <Text style={[styles.pct, { color: statusColor(m.recovery) }]}>{m.recovery}%</Text>
             </View>
           </View>
         ))}
@@ -48,5 +48,5 @@ const styles = StyleSheet.create({
   },
   text: { flex: 1, minWidth: 0 },
   name: { ...type.body, fontSize: 14, color: colors.textPrimary },
-  pct: { ...type.body, fontSize: 14, color: colors.success },
+  pct: { ...type.body, fontSize: 14 },
 });

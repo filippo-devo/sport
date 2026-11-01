@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
-import { colors, fonts } from '../theme/tokens';
+import { colors, fonts, statusColor } from '../theme/tokens';
 
 type Props = {
   value: number; // 0–100
@@ -24,7 +24,7 @@ export function RecoveryRing({ value, size = 36, stroke = 3, showValue = true }:
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke={colors.success}
+          stroke={statusColor(value)}
           strokeWidth={stroke}
           strokeLinecap="round"
           fill="none"
