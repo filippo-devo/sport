@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { BooksIcon, CaretRightIcon, FireIcon, ForkKnifeIcon, MoonIcon, PlayIcon, ScalesIcon, type Icon } from '../../components/icons';
+import { BooksIcon, CaretRightIcon, FireIcon, ForkKnifeIcon, MoonIcon, PlayIcon, QrCodeIcon, ScalesIcon, type Icon } from '../../components/icons';
 import { LogWeightSheet } from '../../components/LogWeightSheet';
 import { MacroBars } from '../../components/MacroBars';
 import { Button, Card, SectionTitle } from '../../components/ui/controls';
@@ -180,6 +180,7 @@ export default function TodayScreen() {
         />
         <QuickAction icon={ForkKnifeIcon} label={t('quick.addMeal')} onPress={() => router.push('/add-meal')} />
         <QuickAction icon={ScalesIcon} label={t('quick.logWeight')} onPress={() => setWeightOpen(true)} />
+        <QuickAction icon={QrCodeIcon} label={t('quick.gym')} onPress={() => router.push('/gym')} />
         <QuickAction icon={BooksIcon} label={t('quick.library')} onPress={() => router.push('/library')} />
       </View>
 

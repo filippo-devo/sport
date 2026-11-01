@@ -23,6 +23,7 @@ import type {
   Settings,
   Supplement,
   SupplementLog,
+  GymVisit,
   WaterEntry,
   WeighIn,
 } from '../data/types';
@@ -45,6 +46,7 @@ type Data = {
   supplements: Supplement[];
   supplementLogs: SupplementLog[];
   reminders: ReminderSettings;
+  gymVisits: GymVisit[];
 };
 
 type Actions = {
@@ -86,6 +88,7 @@ type Actions = {
   deleteSupplement: (id: string) => void;
   takeSupplement: (id: string, date?: string) => void;
   deleteSupplementLog: (id: string) => void;
+  addGymVisit: (v: GymVisit) => void;
 
   resetAll: () => void;
 };
@@ -129,6 +132,7 @@ function initialData(): Data {
     supplements: [],
     supplementLogs: [],
     reminders: DEFAULT_REMINDERS,
+    gymVisits: [],
   };
 }
 
@@ -346,6 +350,7 @@ export const useStore = create<AppState>()(
           set({ supplementLogs: [...get().supplementLogs, { id: uid(), supplementId: id, name: supp.name, dose: supp.dose, date, time: hhmm() }] });
         },
         deleteSupplementLog: (id) => set({ supplementLogs: get().supplementLogs.filter((l) => l.id !== id) }),
+        addGymVisit: (v) => set({ gymVisits: [...get().gymVisits, v] }),
 
         resetAll: () => {
           const { lang, units } = get().settings;
@@ -396,6 +401,7 @@ export const useStore = create<AppState>()(
           supplements: s.supplements,
           supplementLogs: s.supplementLogs,
           reminders: s.reminders,
+          gymVisits: s.gymVisits,
         };
         return data;
       },

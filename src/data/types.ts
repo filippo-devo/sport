@@ -146,6 +146,36 @@ export type Supplement = {
 
 export type SupplementLog = { id: string; supplementId: string; name: string; dose: string; date: string; time: string };
 
+/** A partner gym that accepts QR check-ins. */
+export type PartnerGym = {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  /** Centre of the gym and the radius within which a check-in counts as on site. Null = no GPS check. */
+  location: { lat: number; lng: number; radiusM: number } | null;
+  /** Secret part of the QR code printed at the gym's reception. */
+  code: string;
+  /** Test entry for trying the flow; shown with a badge and its QR is viewable in the app. */
+  test?: boolean;
+};
+
+/** One verified visit at a partner gym. */
+export type GymVisit = {
+  id: string;
+  gymId: string;
+  gymName: string;
+  address: string;
+  at: number;
+  date: string;
+  time: string;
+  /** Where the phone was at check-in, when location was available. */
+  coords?: { lat: number; lng: number; accuracyM?: number };
+  distanceM?: number;
+  /** 'qr+gps': code and position matched; 'qr': code matched, position unavailable or the gym has no geofence. */
+  method: 'qr+gps' | 'qr';
+};
+
 export type Units = 'kg' | 'lb';
 
 export type Goals = {

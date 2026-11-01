@@ -31,6 +31,7 @@ function App() {
         <Stack.Screen name="add-meal" options={{ presentation: 'modal' }} />
         <Stack.Screen name="routine-edit" options={{ presentation: 'modal' }} />
         <Stack.Screen name="plan-edit" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="gym/scan" options={{ presentation: 'fullScreenModal' }} />
       </Stack>
     </SafeAreaProvider>
   );

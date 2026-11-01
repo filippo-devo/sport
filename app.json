@@ -40,6 +40,26 @@
         {
           "motionPermission": "GameChanger reads your step count to show daily steps."
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "GameChanger uses the camera to scan the QR code at partner gyms.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "GameChanger checks your location when you check in at a partner gym."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#D2FE08"
+        }
       ]
     ],
     "scheme": "sport",
