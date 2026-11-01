@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useT } from '../../i18n';
 import { addDays, dayKey, startOfDay } from '../../lib/date';
-import { formatVolume } from '../../lib/units';
+import { formatNumber, formatVolume } from '../../lib/units';
 import { useStore } from '../../store';
 import { activeDays, activityCalendar, dayStreak, goalProgress, goalWeekStreak, periodTotals, regularity, startOfMonth, workoutsPerWeek, type CalendarDay } from '../../store/stats';
 import { colors, fonts, space, statusColor, type } from '../../theme/tokens';
@@ -75,7 +75,7 @@ export function ProgressOverview() {
       {/* Workouts per week */}
       <SectionTitle style={styles.section} title={t('stats.perWeek')} aside={t('stats.lastWeeks', { n: CHART_WEEKS })} />
       <Card style={styles.card}>
-        <ChartHeadline value={t('stats.avgPerWeek', { n: avgPerWeek.toFixed(1).replace('.0', '') })} caption={`${t('progress.goal')} ${goals.workoutsPerWeek} / ${t('stats.week')}`} />
+        <ChartHeadline value={t('stats.avgPerWeek', { n: formatNumber(avgPerWeek, 1) })} caption={`${t('progress.goal')} ${goals.workoutsPerWeek} / ${t('stats.week')}`} />
         <BarChart
           values={stats.perWeek.map((w) => w.count)}
           goal={goals.workoutsPerWeek}
@@ -128,7 +128,7 @@ export function ProgressOverview() {
         </View>
         <View style={styles.legend}>
           <Legend color={colors.track} label={t('stats.legendNone')} />
-          <Legend color="rgba(170,183,196,0.35)" label={t('stats.legendActive')} />
+          <Legend color="rgba(170,183,196,0.62)" label={t('stats.legendActive')} />
           <Legend color={colors.accent} label={t('stats.legendWorkout')} />
         </View>
         {picked && (
@@ -160,7 +160,7 @@ function cellColor(d: CalendarDay, maxVolume: number) {
     const k = d.volume > 0 ? 0.45 + 0.55 * (d.volume / maxVolume) : 0.6;
     return `rgba(210,254,8,${k.toFixed(2)})`;
   }
-  return d.active ? 'rgba(170,183,196,0.35)' : colors.track;
+  return d.active ? 'rgba(170,183,196,0.62)' : colors.track;
 }
 
 function GoalRing({ label, done, goal, ratio }: { label: string; done: number; goal: number; ratio: number }) {

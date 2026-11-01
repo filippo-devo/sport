@@ -9,9 +9,9 @@ const [id, out = `gym-${process.argv[2]}.svg`] = process.argv.slice(2);
 const gym = id ? GYM_BY_ID[id] : undefined;
 if (!gym) {
   console.error(`Unknown gym "${id ?? ''}". Known: ${Object.keys(GYM_BY_ID).join(', ')}`);
-  process.exit(1);
+} else {
+  const payload = gymQrPayload(gym);
+  QRCode.toFile(out, payload, { type: 'svg', margin: 2, width: 600, color: { dark: '#091017', light: '#ffffff' } }).then(() => {
+    console.log(`${gym.name}: ${out}\nManual code: ${payload}`);
+  });
 }
-const payload = gymQrPayload(gym);
-QRCode.toFile(out, payload, { type: 'svg', margin: 2, width: 600, color: { dark: '#091017', light: '#ffffff' } }).then(() => {
-  console.log(`${gym.name}: ${out}\nManual code: ${payload}`);
-});

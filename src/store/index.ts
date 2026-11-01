@@ -6,6 +6,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { EXERCISE_BY_ID } from '../data/exercises';
 import { PROGRAMS } from '../data/programs';
+import type { CoachMessage } from '../ai/types';
 import type {
   ActiveWorkout,
   Goals,
@@ -47,6 +48,10 @@ type Data = {
   supplementLogs: SupplementLog[];
   reminders: ReminderSettings;
   gymVisits: GymVisit[];
+  /** AI trainer conversation (kept on the device). */
+  coachChat: CoachMessage[];
+  /** Plans assigned by personal trainers (server id -> local plan id and version). */
+  coachPlanLinks: Record<string, { localId: string; updatedAt: string }>;
 };
 
 type Actions = {
@@ -89,6 +94,10 @@ type Actions = {
   takeSupplement: (id: string, date?: string) => void;
   deleteSupplementLog: (id: string) => void;
   addGymVisit: (v: GymVisit) => void;
+  addCoachMessage: (m: CoachMessage) => void;
+  updateCoachMessage: (id: string, patch: Partial<CoachMessage>) => void;
+  clearCoachChat: () => void;
+  setCoachPlanLinks: (links: Data['coachPlanLinks']) => void;
 
   resetAll: () => void;
 };
@@ -133,6 +142,8 @@ function initialData(): Data {
     supplementLogs: [],
     reminders: DEFAULT_REMINDERS,
     gymVisits: [],
+    coachChat: [],
+    coachPlanLinks: {},
   };
 }
 
@@ -351,6 +362,10 @@ export const useStore = create<AppState>()(
         },
         deleteSupplementLog: (id) => set({ supplementLogs: get().supplementLogs.filter((l) => l.id !== id) }),
         addGymVisit: (v) => set({ gymVisits: [...get().gymVisits, v] }),
+        addCoachMessage: (m) => set({ coachChat: [...get().coachChat, m].slice(-100) }),
+        updateCoachMessage: (id, patch) => set({ coachChat: get().coachChat.map((m) => (m.id === id ? { ...m, ...patch } : m)) }),
+        clearCoachChat: () => set({ coachChat: [] }),
+        setCoachPlanLinks: (coachPlanLinks) => set({ coachPlanLinks }),
 
         resetAll: () => {
           const { lang, units } = get().settings;
@@ -402,6 +417,8 @@ export const useStore = create<AppState>()(
           supplementLogs: s.supplementLogs,
           reminders: s.reminders,
           gymVisits: s.gymVisits,
+          coachChat: s.coachChat,
+          coachPlanLinks: s.coachPlanLinks,
         };
         return data;
       },

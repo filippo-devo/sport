@@ -7,5 +7,7 @@
       // instead of the library's .tsx sources (which Metro bundles).
       "phosphor-react-native/src/icons/*": ["./node_modules/phosphor-react-native/lib/typescript/icons/*"]
     }
-  }
+  },
+  // Deno code for Supabase Edge Functions is type-checked by the Supabase CLI.
+  "exclude": ["node_modules", "supabase"]
 }

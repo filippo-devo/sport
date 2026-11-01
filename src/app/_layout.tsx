@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { useCoachSync } from '../backend/sync';
 import { useReminderSync } from '../lib/reminders';
 import { setDecimalSeparator } from '../lib/units';
 import { useHydrated, useStore } from '../store';
@@ -20,6 +21,7 @@ export default function RootLayout() {
 
 function App() {
   useReminderSync();
+  useCoachSync();
 
   return (
     <SafeAreaProvider>

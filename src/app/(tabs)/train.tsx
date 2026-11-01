@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ExerciseRow } from '../../components/ExerciseRow';
-import { CaretRightIcon, PlusIcon, FireIcon } from '../../components/icons';
+import { CaretRightIcon, PlusIcon, FireIcon, RobotIcon } from '../../components/icons';
 import { StartWorkoutButton } from '../../components/StartWorkoutButton';
 import { TargetMuscles } from '../../components/TargetMuscles';
 import { Card, Divider, SectionTitle } from '../../components/ui/controls';
@@ -137,12 +137,25 @@ export default function TrainScreen() {
           </Text>
         </Pressable>
       </View>
+      <Card style={styles.coachCard} onPress={() => router.push('/coach')} accessibilityLabel={t('coach.title')}>
+        <View style={styles.plus}>
+          <RobotIcon size={18} color={colors.accent} weight="fill" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.planName}>{t('coach.title')}</Text>
+          <Text style={styles.planMeta} numberOfLines={2}>
+            {t('train.coachBody')}
+          </Text>
+        </View>
+        <CaretRightIcon size={16} color={colors.textSecondary} weight="bold" />
+      </Card>
       {sheet}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  coachCard: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginTop: space.md },
   streak: {
     flexDirection: 'row',
     alignItems: 'center',

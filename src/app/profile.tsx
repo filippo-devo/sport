@@ -113,6 +113,11 @@ export default function ProfileScreen() {
           <CaretRightIcon size={14} color={colors.textSecondary} weight="bold" />
         </Pressable>
         <Divider />
+        <Pressable style={styles.row} onPress={() => router.push('/account')} accessibilityRole="button">
+          <Text style={styles.rowLabel}>{t('profile.account')}</Text>
+          <CaretRightIcon size={14} color={colors.textSecondary} weight="bold" />
+        </Pressable>
+        <Divider />
         <Pressable style={styles.row} onPress={() => router.push('/gym')} accessibilityRole="button">
           <Text style={styles.rowLabel}>{t('profile.gymVisits')}</Text>
           <CaretRightIcon size={14} color={colors.textSecondary} weight="bold" />
