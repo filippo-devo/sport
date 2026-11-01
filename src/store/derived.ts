@@ -2,7 +2,7 @@
 import { EXERCISE_BY_ID } from '../data/exercises';
 import { FOOD_BY_ID } from '../data/foods';
 import { PROGRAMS, ROUTINES } from '../data/programs';
-import type { MealEntry, Muscle, Program, Routine, Session, SessionExercise, SetEntry, WeighIn } from '../data/types';
+import type { MealEntry, Muscle, PlanSource, Program, Routine, Session, SessionExercise, SetEntry, WeighIn } from '../data/types';
 import { addDays, dayKey, fromKey, startOfDay, startOfWeek, weekdayIndex } from '../lib/date';
 
 /** Epley estimate; only meaningful up to ~12 reps. */
@@ -151,8 +151,16 @@ export const routineSets = (r: Routine) => r.items.reduce((n, i) => n + i.sets, 
 /** Rough duration: ~2.2 min per set incl. rest, rounded to 5 min. */
 export const routineMinutes = (r: Routine) => Math.max(15, Math.round((routineSets(r) * 2.2) / 5) * 5);
 
-export const getRoutine = (id?: string | null) => ROUTINES.find((r) => r.id === id);
-export const getProgram = (id: string): Program => PROGRAMS.find((p) => p.id === id) ?? PROGRAMS[0];
+/** Looks a routine up among the user's own routines first, then the built-in ones. */
+export const getRoutine = (id: string | null | undefined, custom: Routine[] = []) =>
+  id ? (custom.find((r) => r.id === id) ?? ROUTINES.find((r) => r.id === id)) : undefined;
+
+export const findProgram = (id: string | undefined, custom: Program[] = []) =>
+  id ? (custom.find((p) => p.id === id) ?? PROGRAMS.find((p) => p.id === id)) : undefined;
+
+export const getProgram = (id: string, custom: Program[] = []): Program => findProgram(id, custom) ?? PROGRAMS[0];
+
+export const isCustom = (x: { source?: PlanSource }) => !!x.source && x.source !== 'builtin';
 
 export type DayStatus = 'done' | 'today' | 'planned' | 'missed' | 'rest';
 
@@ -168,13 +176,13 @@ export function sessionsOn(sessions: Session[], key: string) {
   return sessions.filter((s) => dayKey(s.startedAt) === key);
 }
 
-export function planWeek(program: Program, sessions: Session[], now = new Date()): PlanDay[] {
+export function planWeek(program: Program, sessions: Session[], now = new Date(), custom: Routine[] = []): PlanDay[] {
   const todayKey = dayKey(now);
   const start = startOfWeek(now);
   return Array.from({ length: 7 }, (_, i) => {
     const date = addDays(start, i);
     const key = dayKey(date);
-    const routine = getRoutine(program.schedule[weekdayIndex(date)]);
+    const routine = getRoutine(program.schedule[weekdayIndex(date)], custom);
     const session = sessionsOn(sessions, key)[0];
     let status: DayStatus;
     if (session) status = 'done';
@@ -185,24 +193,12 @@ export function planWeek(program: Program, sessions: Session[], now = new Date()
   });
 }
 
-/** Consecutive weeks (ending this week, or last week if this one is still empty) with ≥ 1 workout. */
-export function weekStreak(sessions: Session[], now = new Date()): number {
-  const weeks = new Set(sessions.map((s) => dayKey(startOfWeek(new Date(s.startedAt)))));
-  let cursor = startOfWeek(now);
-  if (!weeks.has(dayKey(cursor))) cursor = addDays(cursor, -7);
-  let n = 0;
-  while (weeks.has(dayKey(cursor))) {
-    n++;
-    cursor = addDays(cursor, -7);
-  }
-  return n;
-}
-
 export type Nutrients = { kcal: number; protein: number; carbs: number; fat: number; fiber: number; sugar: number };
 
 export const ZERO: Nutrients = { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0 };
 
 export function entryNutrients(m: MealEntry): Nutrients {
+  if (m.manual) return { ...ZERO, kcal: m.manual.kcal, protein: m.manual.protein, carbs: m.manual.carbs, fat: m.manual.fat };
   const f = FOOD_BY_ID[m.foodId];
   if (!f) return ZERO;
   const k = m.grams / 100;

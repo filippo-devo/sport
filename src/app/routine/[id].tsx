@@ -2,15 +2,16 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ExerciseRow } from '../../components/ExerciseRow';
-import { PlayIcon } from '../../components/icons';
+import { CopyIcon, PencilSimpleIcon, PlayIcon } from '../../components/icons';
 import { TargetMuscles } from '../../components/TargetMuscles';
-import { Button, Divider, SectionTitle } from '../../components/ui/controls';
+import { Button, Divider, IconButton, SectionTitle } from '../../components/ui/controls';
 import { NavBar } from '../../components/ui/headers';
 import { BottomFade, Screen, useLayout } from '../../components/ui/layout';
 import { useStartWorkout } from '../../components/useStartWorkout';
 import { useT } from '../../i18n';
 import { useStore } from '../../store';
-import { getRoutine, lastPerformance, muscleRecovery, routineMinutes, routineMuscles, routineSets } from '../../store/derived';
+import { useRoutine } from '../../store/plans';
+import { isCustom, lastPerformance, muscleRecovery, routineMinutes, routineMuscles, routineSets } from '../../store/derived';
 import { colors, layout, space, type } from '../../theme/tokens';
 
 /** Routine preview with target muscles and the exercise list; starts the workout. */
@@ -21,7 +22,7 @@ export default function RoutineScreen() {
   const sessions = useStore((s) => s.sessions);
   const units = useStore((s) => s.settings.units);
   const { start, sheet, active } = useStartWorkout();
-  const routine = getRoutine(id);
+  const routine = useRoutine(id);
   if (!routine) return <Screen top={<NavBar />}>{null}</Screen>;
 
   const muscles = routineMuscles(routine)
@@ -32,7 +33,17 @@ export default function RoutineScreen() {
 
   return (
     <Screen
-      top={<NavBar />}
+      top={
+        <NavBar
+          right={
+            isCustom(routine) ? (
+              <IconButton icon={PencilSimpleIcon} label={t('routineEdit.edit')} onPress={() => router.push({ pathname: '/routine-edit', params: { id: routine.id } })} />
+            ) : (
+              <IconButton icon={CopyIcon} label={t('plans.copyRoutine')} onPress={() => router.push({ pathname: '/routine-edit', params: { copy: routine.id } })} />
+            )
+          }
+        />
+      }
       bottomExtra={layout.ctaHeight + space.lg}
       overlay={
         <>
@@ -59,13 +70,13 @@ export default function RoutineScreen() {
       <SectionTitle style={styles.section} title={tn('unit.exercises', routine.items.length)} />
       <View style={{ marginTop: space.xs }}>
         {routine.items.map((item, i) => (
-          <View key={item.exerciseId}>
+          <View key={`${item.exerciseId}-${i}`}>
             {i > 0 && <Divider inset={64 + space.lg} />}
             <ExerciseRow
               item={item}
               index={i}
               units={units}
-              weight={lastPerformance(sessions, item.exerciseId)?.sets.find((s) => s.weight)?.weight}
+              weight={item.weight ?? lastPerformance(sessions, item.exerciseId)?.sets.find((s) => s.weight)?.weight}
               onPress={() => router.push(`/exercise/${item.exerciseId}`)}
             />
           </View>

@@ -39,12 +39,18 @@ export type RoutineItem = {
   /** Target reps ("8–10") or seconds ("45") depending on the exercise's tracking. */
   target: string;
   restSec: number;
+  /** Planned working weight in kg (optional). */
+  weight?: number;
 };
+
+/** Who made a plan: built into the app, the user, the AI trainer or a personal trainer. */
+export type PlanSource = 'builtin' | 'user' | 'ai' | 'coach';
 
 export type Routine = {
   id: string;
   name: Localized;
   items: RoutineItem[];
+  source?: PlanSource;
 };
 
 export type Program = {
@@ -53,6 +59,7 @@ export type Program = {
   description: Localized;
   /** Index 0 = Monday … 6 = Sunday; null = rest day. */
   schedule: (string | null)[];
+  source?: PlanSource;
 };
 
 export type SetEntry = {
@@ -65,6 +72,8 @@ export type SetEntry = {
 export type SessionExercise = {
   exerciseId: string;
   target?: string;
+  /** Planned weight in kg carried over from the routine. */
+  weight?: number;
   restSec: number;
   sets: SetEntry[];
 };
@@ -89,7 +98,7 @@ export type ActiveWorkout = {
   rest: RestTimer | null;
 };
 
-export type WeighIn = { date: string; kg: number; sample?: boolean };
+export type WeighIn = { date: string; kg: number };
 
 export type Photo = { id: string; date: string; uri: string };
 
@@ -109,14 +118,33 @@ export type Food = {
   portion: number;
 };
 
+/** Values typed in by hand (absolute, not per 100 g). */
+export type ManualNutrition = { name: string; kcal: number; protein: number; carbs: number; fat: number };
+
 export type MealEntry = {
   id: string;
   date: string; // YYYY-MM-DD
   meal: MealType;
+  /** Food from the database; empty when `manual` is set. */
   foodId: string;
   grams: number;
   time: string; // HH:MM
+  manual?: ManualNutrition;
 };
+
+export type WaterEntry = { id: string; date: string; time: string; ml: number };
+
+export type Supplement = {
+  id: string;
+  name: string;
+  dose: string;
+  /** Daily reminder times, HH:MM. */
+  times: string[];
+  reminders: boolean;
+  archived?: boolean;
+};
+
+export type SupplementLog = { id: string; supplementId: string; name: string; dose: string; date: string; time: string };
 
 export type Units = 'kg' | 'lb';
 
@@ -127,7 +155,17 @@ export type Goals = {
   fat: number;
   targetWeight: number; // kg
   workoutsPerWeek: number;
+  workoutsPerMonth: number;
   steps: number;
+  waterMl: number;
+};
+
+export type ReminderSettings = {
+  workout: { on: boolean; time: string };
+  /** Evening nudge on a planned day with no workout logged. */
+  missed: { on: boolean; time: string };
+  water: { on: boolean; from: string; to: string; everyHours: number };
+  supplements: { on: boolean };
 };
 
 export type Settings = {

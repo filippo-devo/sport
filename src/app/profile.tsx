@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
@@ -12,7 +13,8 @@ import { useT, type TKey } from '../i18n';
 import { clock } from '../lib/date';
 import { formatVolume, formatWeight, fromDisplayWeight, toDisplayWeight } from '../lib/units';
 import { useStore } from '../store';
-import { sessionVolume, weekStreak } from '../store/derived';
+import { sessionVolume } from '../store/derived';
+import { goalWeekStreak } from '../store/stats';
 import { colors, fonts, space, type } from '../theme/tokens';
 
 type GoalKey = keyof Goals;
@@ -24,14 +26,16 @@ const GOAL_ROWS: { key: GoalKey; label: TKey; unit: string; step: number; min: n
   { key: 'fat', label: 'macro.fat', unit: 'g', step: 5, min: 20, max: 300 },
   { key: 'targetWeight', label: 'profile.targetWeight', unit: '', step: 0.5, min: 30, max: 300 },
   { key: 'workoutsPerWeek', label: 'profile.workoutsPerWeek', unit: '', step: 1, min: 1, max: 7 },
+  { key: 'workoutsPerMonth', label: 'profile.workoutsPerMonth', unit: '', step: 1, min: 1, max: 31 },
   { key: 'steps', label: 'profile.steps', unit: '', step: 500, min: 1000, max: 40000 },
+  { key: 'waterMl', label: 'profile.waterGoal', unit: 'ml', step: 250, min: 500, max: 6000 },
 ];
 
 export default function ProfileScreen() {
   const { t, tn } = useT();
   const s = useStore();
   const [editing, setEditing] = useState<GoalKey | null>(null);
-  const [confirm, setConfirm] = useState<'sample' | 'reset' | null>(null);
+  const [confirm, setConfirm] = useState<'reset' | null>(null);
   const units = s.settings.units;
 
   const initials = s.settings.name
@@ -47,7 +51,8 @@ export default function ProfileScreen() {
     const v = s.goals[key];
     if (key === 'targetWeight') return formatWeight(v, units);
     if (key === 'kcal') return `${v} kcal`;
-    if (key === 'workoutsPerWeek') return String(v);
+    if (key === 'workoutsPerWeek' || key === 'workoutsPerMonth') return String(v);
+    if (key === 'waterMl') return `${v} ml`;
     if (key === 'steps') return v.toLocaleString();
     return `${v} g`;
   };
@@ -74,7 +79,7 @@ export default function ProfileScreen() {
       <Card style={styles.stats}>
         <Stat label={t('profile.workouts')} value={String(s.sessions.length)} />
         <Stat label={t('profile.totalVolume')} value={formatVolume(totalVolume, units)} />
-        <Stat label={t('today.streak')} value={tn('unit.weeks', weekStreak(s.sessions))} />
+        <Stat label={t('today.streak')} value={tn('unit.weeks', goalWeekStreak(s.sessions, s.goals.workoutsPerWeek).current)} />
       </Card>
 
       <SectionTitle style={styles.section} title={t('profile.goals')} />
@@ -103,6 +108,11 @@ export default function ProfileScreen() {
 
       <SectionTitle style={styles.section} title={t('profile.settings')} />
       <Card style={styles.list}>
+        <Pressable style={styles.row} onPress={() => router.push('/notifications')} accessibilityRole="button">
+          <Text style={styles.rowLabel}>{t('profile.notifications')}</Text>
+          <CaretRightIcon size={14} color={colors.textSecondary} weight="bold" />
+        </Pressable>
+        <Divider />
         <View style={styles.settingRow}>
           <Text style={styles.rowLabel}>{t('profile.language')}</Text>
           <View style={styles.control}>
@@ -153,9 +163,7 @@ export default function ProfileScreen() {
       </Card>
 
       <SectionTitle style={styles.section} title={t('profile.data')} />
-      {s.hasSampleData && <Text style={styles.note}>{t('profile.sampleNote')}</Text>}
       <View style={styles.dataButtons}>
-        {s.hasSampleData && <Button label={t('profile.clearSample')} variant="secondary" onPress={() => setConfirm('sample')} />}
         <Button label={t('profile.reset')} variant="danger" icon={TrashIcon} onPress={() => setConfirm('reset')} />
       </View>
       <Text style={styles.version}>GameChanger · {t('profile.version', { v: Constants.expoConfig?.version ?? '1.0.0' })}</Text>
@@ -175,18 +183,6 @@ export default function ProfileScreen() {
         />
       )}
 
-      <ConfirmSheet
-        visible={confirm === 'sample'}
-        title={t('profile.clearSample')}
-        body={t('profile.clearSampleBody')}
-        confirmLabel={t('common.delete')}
-        destructive
-        onCancel={() => setConfirm(null)}
-        onConfirm={() => {
-          s.clearSampleData();
-          setConfirm(null);
-        }}
-      />
       <ConfirmSheet
         visible={confirm === 'reset'}
         title={t('profile.reset')}
@@ -241,7 +237,6 @@ const styles = StyleSheet.create({
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
   settingCol: { gap: space.md, paddingVertical: space.md },
   control: { width: 170 },
-  note: { ...type.body, fontFamily: fonts.regular, color: colors.textSecondary, marginTop: space.sm, lineHeight: 21 },
   dataButtons: { gap: space.sm, marginTop: space.lg },
   version: { ...type.caption, color: colors.textSecondary, textAlign: 'center', marginTop: space.xxl },
 });

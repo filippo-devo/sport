@@ -15,15 +15,15 @@ import { dayKey } from '../../lib/date';
 import { formatBodyWeight, formatNumber, formatVolume, toDisplayWeight } from '../../lib/units';
 import { useTodaySteps } from '../../lib/useSteps';
 import { useStore } from '../../store';
+import { useActiveProgram } from '../../store/plans';
+import { goalWeekStreak } from '../../store/stats';
 import {
-  getProgram,
   latestWeighIn,
   mealsOn,
   planWeek,
   routineMinutes,
   sessionVolume,
   sumNutrients,
-  weekStreak,
   weightChange,
 } from '../../store/derived';
 import { colors, fonts, radius, space, type } from '../../theme/tokens';
@@ -37,7 +37,8 @@ export default function TodayScreen() {
   const [weightOpen, setWeightOpen] = useState(false);
 
   const today = dayKey();
-  const week = useMemo(() => planWeek(getProgram(s.activeProgramId), s.sessions), [s.activeProgramId, s.sessions]);
+  const program = useActiveProgram();
+  const week = useMemo(() => planWeek(program, s.sessions, new Date(), s.routines), [program, s.sessions, s.routines]);
   const todayPlan = week.find((d) => d.key === today)!;
   const planned = week.filter((d) => d.routine || d.session).length;
   const done = week.filter((d) => d.status === 'done').length;
@@ -45,7 +46,7 @@ export default function TodayScreen() {
 
   const totals = sumNutrients(mealsOn(s.meals, today));
   const kcalLeft = s.goals.kcal - totals.kcal;
-  const streak = weekStreak(s.sessions);
+  const streak = goalWeekStreak(s.sessions, s.goals.workoutsPerWeek).current;
   const latest = latestWeighIn(s.weighIns);
   const delta = weightChange(s.weighIns, 7);
   const name = s.settings.name.trim().split(/\s+/)[0];
@@ -146,12 +147,13 @@ export default function TodayScreen() {
 
       {/* Streak + body weight */}
       <View style={[styles.statsRow, styles.section]}>
-        <Card style={styles.stat}>
+        <Card style={styles.stat} onPress={() => router.push('/progress')} accessibilityLabel={t('today.streak')}>
           <View style={styles.statHead}>
             <FireIcon size={18} color={colors.accent} weight="fill" />
             <Text style={styles.statLabel}>{t('today.streak')}</Text>
           </View>
           <Text style={styles.statValue}>{tn('unit.weeks', streak)}</Text>
+          <Text style={styles.statSub}>{t('today.streakSub', { n: s.goals.workoutsPerWeek })}</Text>
         </Card>
         <Card style={styles.stat} onPress={() => setWeightOpen(true)} accessibilityLabel={t('quick.logWeight')}>
           <View style={styles.statHead}>

@@ -15,23 +15,26 @@ import { WorkoutCard } from '../../components/WorkoutCard';
 import { useT } from '../../i18n';
 import { dayKey } from '../../lib/date';
 import { useStore } from '../../store';
-import { getProgram, lastPerformance, muscleRecovery, planWeek, routineMuscles, routineSets, weekStreak } from '../../store/derived';
+import { useActiveProgram } from '../../store/plans';
+import { lastPerformance, muscleRecovery, planWeek, routineMuscles, routineSets } from '../../store/derived';
+import { goalWeekStreak } from '../../store/stats';
 import { colors, fonts, layout, radius, space, type } from '../../theme/tokens';
 
 export default function TrainScreen() {
   const { t, tn, L, dateLong } = useT();
   const { compact, short, tabBarSpace, contentWidth } = useLayout();
   const sessions = useStore((s) => s.sessions);
-  const programId = useStore((s) => s.activeProgramId);
+  const customRoutines = useStore((s) => s.routines);
   const units = useStore((s) => s.settings.units);
   const { start, sheet, active } = useStartWorkout();
 
-  const program = getProgram(programId);
-  const days = useMemo(() => planWeek(program, sessions), [program, sessions]);
+  const program = useActiveProgram();
+  const days = useMemo(() => planWeek(program, sessions, new Date(), customRoutines), [program, sessions, customRoutines]);
   const [selectedKey, setSelectedKey] = useState(dayKey());
   const day = days.find((d) => d.key === selectedKey) ?? days[0];
   const routine = day.routine;
-  const streak = weekStreak(sessions);
+  const goalPerWeek = useStore((s) => s.goals.workoutsPerWeek);
+  const streak = goalWeekStreak(sessions, goalPerWeek).current;
 
   const muscles = routine ? routineMuscles(routine).slice(0, 3).map((m) => ({ muscle: m, recovery: muscleRecovery(sessions, m) })) : [];
   const recovery = muscles.length ? Math.round(muscles.reduce((n, m) => n + m.recovery, 0) / muscles.length) : undefined;
@@ -93,13 +96,13 @@ export default function TrainScreen() {
           />
           <View style={styles.list}>
             {routine.items.map((item, i) => (
-              <View key={item.exerciseId}>
+              <View key={`${item.exerciseId}-${i}`}>
                 {i > 0 && <Divider inset={64 + space.lg} />}
                 <ExerciseRow
                   item={item}
                   index={i}
                   units={units}
-                  weight={lastPerformance(sessions, item.exerciseId)?.sets.find((s) => s.weight)?.weight}
+                  weight={item.weight ?? lastPerformance(sessions, item.exerciseId)?.sets.find((s) => s.weight)?.weight}
                   onPress={() => router.push(`/exercise/${item.exerciseId}`)}
                 />
               </View>

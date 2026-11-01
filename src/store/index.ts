@@ -6,20 +6,27 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { EXERCISE_BY_ID } from '../data/exercises';
 import { PROGRAMS } from '../data/programs';
-import { sampleMeals, sampleSessions, sampleWeighIns } from '../data/sample';
 import type {
   ActiveWorkout,
   Goals,
   Lang,
+  ManualNutrition,
   MealEntry,
+  MealType,
   Photo,
+  Program,
+  ReminderSettings,
+  Routine,
   Session,
   SessionExercise,
   SetEntry,
   Settings,
+  Supplement,
+  SupplementLog,
+  WaterEntry,
   WeighIn,
 } from '../data/types';
-import { dayKey } from '../lib/date';
+import { dayKey, hhmm } from '../lib/date';
 import { getRoutine, lastPerformance } from './derived';
 
 type Data = {
@@ -31,13 +38,20 @@ type Data = {
   weighIns: WeighIn[];
   photos: Photo[];
   meals: MealEntry[];
-  hasSampleData: boolean;
+  /** The user's own workouts and plans (built-in ones live in data/programs). */
+  routines: Routine[];
+  programs: Program[];
+  water: WaterEntry[];
+  supplements: Supplement[];
+  supplementLogs: SupplementLog[];
+  reminders: ReminderSettings;
 };
 
 type Actions = {
   setSettings: (patch: Partial<Settings>) => void;
   setGoals: (patch: Partial<Goals>) => void;
   setActiveProgram: (id: string) => void;
+  setReminders: (patch: Partial<ReminderSettings>) => void;
 
   startWorkout: (routineId?: string) => void;
   updateSet: (ex: number, set: number, patch: Partial<SetEntry>) => void;
@@ -56,8 +70,23 @@ type Actions = {
   addPhoto: (photo: Photo) => void;
   deletePhoto: (id: string) => void;
   deleteMeal: (id: string) => void;
+  addFood: (entry: { foodId: string; grams: number; meal: MealType; date?: string }) => void;
+  addManual: (entry: { manual: ManualNutrition; meal: MealType; date?: string }) => void;
+  updateMeal: (id: string, patch: Partial<Pick<MealEntry, 'grams' | 'meal' | 'manual'>>) => void;
 
-  clearSampleData: () => void;
+  saveRoutine: (routine: Routine) => string;
+  deleteRoutine: (id: string) => void;
+  saveProgram: (program: Program) => string;
+  deleteProgram: (id: string) => void;
+  saveSessionAsRoutine: (sessionId: string, name: string) => string | null;
+
+  addWater: (ml: number, date?: string) => void;
+  deleteWater: (id: string) => void;
+  saveSupplement: (s: Supplement) => void;
+  deleteSupplement: (id: string) => void;
+  takeSupplement: (id: string, date?: string) => void;
+  deleteSupplementLog: (id: string) => void;
+
   resetAll: () => void;
 };
 
@@ -72,25 +101,38 @@ const DEFAULT_GOALS: Goals = {
   fat: 75,
   targetWeight: 79,
   workoutsPerWeek: 4,
+  workoutsPerMonth: 16,
   steps: 10000,
+  waterMl: 2500,
 };
 
-function initialData(withSample: boolean): Data {
-  const now = new Date();
+export const DEFAULT_REMINDERS: ReminderSettings = {
+  workout: { on: false, time: '17:00' },
+  missed: { on: false, time: '20:30' },
+  water: { on: false, from: '09:00', to: '21:00', everyHours: 2 },
+  supplements: { on: true },
+};
+
+function initialData(): Data {
   return {
     settings: { name: '', lang: deviceLang(), units: 'kg', restSec: 90, haptics: true },
     goals: DEFAULT_GOALS,
     activeProgramId: PROGRAMS[0].id,
-    sessions: withSample ? sampleSessions(now) : [],
+    sessions: [],
     active: null,
-    weighIns: withSample ? sampleWeighIns(now) : [],
+    weighIns: [],
     photos: [],
-    meals: withSample ? sampleMeals(now) : [],
-    hasSampleData: withSample,
+    meals: [],
+    routines: [],
+    programs: [],
+    water: [],
+    supplements: [],
+    supplementLogs: [],
+    reminders: DEFAULT_REMINDERS,
   };
 }
 
-const uid = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+export const uid = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 function emptySets(n: number): SetEntry[] {
   return Array.from({ length: n }, () => ({ done: false }));
@@ -109,8 +151,14 @@ function filledFromPrevious(set: SetEntry, prev?: SetEntry): SetEntry {
 function targetDefaults(ex: SessionExercise): SetEntry {
   const tracking = EXERCISE_BY_ID[ex.exerciseId]?.tracking;
   const n = parseInt(ex.target ?? '', 10);
-  if (!Number.isFinite(n)) return { done: false };
-  return tracking === 'time' ? { seconds: n, done: false } : { reps: n, done: false };
+  const weight = tracking === 'weightReps' ? ex.weight : undefined;
+  if (!Number.isFinite(n)) return { done: false, weight };
+  return tracking === 'time' ? { seconds: n, done: false } : { reps: n, weight, done: false };
+}
+
+/** Upsert by id, keeping list order. */
+function upsert<T extends { id: string }>(list: T[], item: T): T[] {
+  return list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item];
 }
 
 export const useStore = create<AppState>()(
@@ -124,15 +172,16 @@ export const useStore = create<AppState>()(
         patchActive((a) => ({ ...a, exercises: a.exercises.map((e, j) => (j === i ? fn(e) : e)) }));
 
       return {
-        ...initialData(true),
+        ...initialData(),
 
         setSettings: (patch) => set({ settings: { ...get().settings, ...patch } }),
         setGoals: (patch) => set({ goals: { ...get().goals, ...patch } }),
         setActiveProgram: (id) => set({ activeProgramId: id }),
+        setReminders: (patch) => set({ reminders: { ...get().reminders, ...patch } }),
 
         startWorkout: (routineId) => {
           if (get().active) return;
-          const routine = getRoutine(routineId);
+          const routine = getRoutine(routineId, get().routines);
           set({
             active: {
               id: uid(),
@@ -144,6 +193,7 @@ export const useStore = create<AppState>()(
                 exerciseId: item.exerciseId,
                 target: item.target,
                 restSec: item.restSec,
+                weight: item.weight,
                 sets: emptySets(item.sets),
               })),
             },
@@ -223,36 +273,132 @@ export const useStore = create<AppState>()(
         addPhoto: (photo) => set({ photos: [photo, ...get().photos] }),
         deletePhoto: (id) => set({ photos: get().photos.filter((p) => p.id !== id) }),
         deleteMeal: (id) => set({ meals: get().meals.filter((m) => m.id !== id) }),
+        addFood: ({ foodId, grams, meal, date = dayKey() }) =>
+          set({ meals: [...get().meals, { id: uid(), date, meal, foodId, grams, time: hhmm() }] }),
+        addManual: ({ manual, meal, date = dayKey() }) =>
+          set({ meals: [...get().meals, { id: uid(), date, meal, foodId: '', grams: 0, time: hhmm(), manual }] }),
+        updateMeal: (id, patch) => set({ meals: get().meals.map((m) => (m.id === id ? { ...m, ...patch } : m)) }),
 
-        clearSampleData: () =>
+        saveRoutine: (routine) => {
+          const r = { ...routine, id: routine.id || uid(), source: routine.source ?? 'user' };
+          set({ routines: upsert(get().routines, r) });
+          return r.id;
+        },
+        deleteRoutine: (id) =>
           set({
-            sessions: get().sessions.filter((s) => !s.id.startsWith('sample-')),
-            meals: get().meals.filter((m) => !m.id.startsWith('sample-')),
-            weighIns: get().weighIns.filter((w) => !w.sample),
-            hasSampleData: false,
+            routines: get().routines.filter((r) => r.id !== id),
+            programs: get().programs.map((p) => ({ ...p, schedule: p.schedule.map((x) => (x === id ? null : x)) })),
           }),
+        saveProgram: (program) => {
+          const p = { ...program, id: program.id || uid(), source: program.source ?? 'user' };
+          set({ programs: upsert(get().programs, p) });
+          return p.id;
+        },
+        deleteProgram: (id) => {
+          const program = get().programs.find((p) => p.id === id);
+          // Routines used only by this plan go with it when they were generated for it.
+          const usedElsewhere = new Set(get().programs.filter((p) => p.id !== id).flatMap((p) => p.schedule));
+          const orphans = new Set(
+            (program?.schedule ?? []).filter((r): r is string => !!r && !usedElsewhere.has(r) && get().routines.some((x) => x.id === r && x.source !== 'user')),
+          );
+          set({
+            programs: get().programs.filter((p) => p.id !== id),
+            routines: get().routines.filter((r) => !orphans.has(r.id)),
+            activeProgramId: get().activeProgramId === id ? PROGRAMS[0].id : get().activeProgramId,
+          });
+        },
+        saveSessionAsRoutine: (sessionId, name) => {
+          const s = get().sessions.find((x) => x.id === sessionId);
+          if (!s) return null;
+          const id = uid();
+          const routine: Routine = {
+            id,
+            name: { en: name, pl: name },
+            source: 'user',
+            items: s.exercises.map((e) => {
+              const top = e.sets.reduce<SetEntry | undefined>((best, x) => ((x.weight ?? 0) >= (best?.weight ?? 0) ? x : best), undefined);
+              return {
+                exerciseId: e.exerciseId,
+                sets: e.sets.length,
+                target: String(top?.reps ?? top?.seconds ?? e.target ?? 10),
+                restSec: e.restSec,
+                weight: top?.weight,
+              };
+            }),
+          };
+          set({ routines: [...get().routines, routine] });
+          return id;
+        },
+
+        addWater: (ml, date = dayKey()) => set({ water: [...get().water, { id: uid(), date, time: hhmm(), ml }] }),
+        deleteWater: (id) => set({ water: get().water.filter((w) => w.id !== id) }),
+        saveSupplement: (supp) => set({ supplements: upsert(get().supplements, { ...supp, id: supp.id || uid() }) }),
+        deleteSupplement: (id) =>
+          // Keep the history readable: archive instead of deleting when it was ever taken.
+          set({
+            supplements: get().supplementLogs.some((l) => l.supplementId === id)
+              ? get().supplements.map((x) => (x.id === id ? { ...x, archived: true, reminders: false } : x))
+              : get().supplements.filter((x) => x.id !== id),
+          }),
+        takeSupplement: (id, date = dayKey()) => {
+          const supp = get().supplements.find((x) => x.id === id);
+          if (!supp) return;
+          set({ supplementLogs: [...get().supplementLogs, { id: uid(), supplementId: id, name: supp.name, dose: supp.dose, date, time: hhmm() }] });
+        },
+        deleteSupplementLog: (id) => set({ supplementLogs: get().supplementLogs.filter((l) => l.id !== id) }),
+
         resetAll: () => {
           const { lang, units } = get().settings;
-          const fresh = initialData(false);
+          const fresh = initialData();
           set({ ...fresh, settings: { ...fresh.settings, lang, units } });
         },
       };
     },
     {
       name: 'gamechanger',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: ({ settings, goals, activeProgramId, sessions, active, weighIns, photos, meals, hasSampleData }) => ({
-        settings,
-        goals,
-        activeProgramId,
-        sessions,
-        active,
-        weighIns,
-        photos,
-        meals,
-        hasSampleData,
-      }),
+      // v1 shipped with generated sample history; statistics must come from real entries only.
+      migrate: (persisted, version) => {
+        const state = (persisted ?? {}) as Partial<Data> & { hasSampleData?: boolean };
+        if (version < 2) {
+          state.sessions = (state.sessions ?? []).filter((x) => !x.id.startsWith('sample-'));
+          state.meals = (state.meals ?? []).filter((x) => !x.id.startsWith('sample-'));
+          state.weighIns = (state.weighIns ?? []).filter((x) => !(x as { sample?: boolean }).sample);
+          delete state.hasSampleData;
+        }
+        return state as Data;
+      },
+      // Goals gain fields over time: merge them so older saves pick up the new defaults.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<Data>;
+        return {
+          ...current,
+          ...p,
+          goals: { ...current.goals, ...p.goals },
+          settings: { ...current.settings, ...p.settings },
+          reminders: { ...current.reminders, ...p.reminders },
+        };
+      },
+      partialize: (s) => {
+        const data: Data = {
+          settings: s.settings,
+          goals: s.goals,
+          activeProgramId: s.activeProgramId,
+          sessions: s.sessions,
+          active: s.active,
+          weighIns: s.weighIns,
+          photos: s.photos,
+          meals: s.meals,
+          routines: s.routines,
+          programs: s.programs,
+          water: s.water,
+          supplements: s.supplements,
+          supplementLogs: s.supplementLogs,
+          reminders: s.reminders,
+        };
+        return data;
+      },
     },
   ),
 );

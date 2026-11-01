@@ -1,14 +1,14 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { CaretRightIcon, CheckIcon } from '../../components/icons';
-import { Badge, Button, Card, Divider, SectionTitle } from '../../components/ui/controls';
+import { CaretRightIcon, CheckIcon, PencilSimpleIcon } from '../../components/icons';
+import { Badge, Button, Card, Divider, IconButton, SectionTitle } from '../../components/ui/controls';
 import { NavBar } from '../../components/ui/headers';
 import { Screen } from '../../components/ui/layout';
-import { PROGRAMS } from '../../data/programs';
 import { useT } from '../../i18n';
 import { useStore } from '../../store';
-import { getRoutine, routineMinutes } from '../../store/derived';
+import { getRoutine, isCustom, routineMinutes } from '../../store/derived';
+import { useProgramById } from '../../store/plans';
 import { colors, fonts, space, type } from '../../theme/tokens';
 
 export default function PlanDetail() {
@@ -16,15 +16,23 @@ export default function PlanDetail() {
   const { t, tn, L, weekdayLong } = useT();
   const activeId = useStore((s) => s.activeProgramId);
   const setActive = useStore((s) => s.setActiveProgram);
-  const program = PROGRAMS.find((p) => p.id === id);
+  const custom = useStore((s) => s.routines);
+  const program = useProgramById(id);
   if (!program) return <Screen top={<NavBar />}>{null}</Screen>;
   const monday = new Date(2024, 0, 1);
-  const routines = [...new Set(program.schedule.filter(Boolean) as string[])].map((r) => getRoutine(r)!);
+  const routines = [...new Set(program.schedule.filter(Boolean) as string[])].map((r) => getRoutine(r, custom)).filter((r) => !!r);
 
   return (
-    <Screen top={<NavBar title={t('plans.title')} />}>
+    <Screen
+      top={
+        <NavBar
+          title={t('plans.title')}
+          right={isCustom(program) ? <IconButton icon={PencilSimpleIcon} label={t('plans.edit')} onPress={() => router.push({ pathname: '/plan-edit', params: { id: program.id } })} /> : undefined}
+        />
+      }
+    >
       <Text style={styles.title}>{L(program.name)}</Text>
-      <Text style={styles.desc}>{L(program.description)}</Text>
+      {L(program.description) ? <Text style={styles.desc}>{L(program.description)}</Text> : null}
       {program.id === activeId ? (
         <View style={{ marginTop: space.lg }}>
           <Badge label={t('plans.active').toUpperCase()} icon={CheckIcon} />
@@ -36,7 +44,7 @@ export default function PlanDetail() {
       <SectionTitle style={styles.section} title={t('plans.schedule')} />
       <Card style={styles.schedule}>
         {program.schedule.map((rid, i) => {
-          const r = getRoutine(rid);
+          const r = getRoutine(rid, custom);
           return (
             <View key={i}>
               {i > 0 && <Divider />}

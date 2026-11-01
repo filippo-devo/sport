@@ -105,11 +105,13 @@ type BarProps = {
   color?: string;
   /** Bars at or above the goal use `color`; below use a muted tone. Draws a dashed goal line. */
   goal?: number;
+  /** 'band': only bars within ±10 % of the goal are highlighted (calories). 'min': bars at or above it (workouts). */
+  goalMode?: 'band' | 'min';
   highlightLast?: boolean;
   format?: (v: number) => string;
 };
 
-export function BarChart({ values, labels = [], height = 140, color = colors.accent, goal, highlightLast = true, format = (v) => String(Math.round(v)) }: BarProps) {
+export function BarChart({ values, labels = [], height = 140, color = colors.accent, goal, goalMode = 'band', highlightLast = true, format = (v) => String(Math.round(v)) }: BarProps) {
   const [width, onLayout] = useWidth();
   const padR = 40;
   const padT = 10;
@@ -130,7 +132,7 @@ export function BarChart({ values, labels = [], height = 140, color = colors.acc
         </SvgText>
         {values.map((v, i) => {
           const x = i * slot + (slot - barW) / 2;
-          const muted = goal != null ? v < goal * 0.9 || v > goal * 1.1 : highlightLast && i !== n - 1;
+          const muted = goal != null ? (goalMode === 'min' ? v < goal : v < goal * 0.9 || v > goal * 1.1) : highlightLast && i !== n - 1;
           const fill = v === 0 ? colors.track : muted ? 'rgba(210,254,8,0.38)' : color;
           const h = Math.max(v > 0 ? 3 : 2, height - padB - sy(v));
           return <Rect key={i} x={x} y={height - padB - h} width={barW} height={h} rx={Math.min(4, barW / 2)} fill={fill} />;

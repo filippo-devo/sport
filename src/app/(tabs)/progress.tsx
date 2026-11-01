@@ -4,6 +4,7 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import { CameraIcon, PlusIcon, ScalesIcon, TrophyIcon } from '../../components/icons';
 import { LogWeightSheet } from '../../components/LogWeightSheet';
+import { ProgressOverview } from '../../components/progress/Overview';
 import { SessionRow } from '../../components/SessionRow';
 import { BarChart, ChartHeadline, LineChart } from '../../components/ui/charts';
 import { Button, Card, Chip, Divider, Notice, Segmented, SectionTitle } from '../../components/ui/controls';
@@ -78,6 +79,7 @@ export default function ProgressScreen() {
   return (
     <Screen tabBar>
       <TabHeader title={t('progress.title')} />
+      <ProgressOverview />
       <View style={styles.range}>
         <Segmented
           value={range}
@@ -264,7 +266,7 @@ function edgeLabels(points: { x: number }[], fmt: (d: Date) => string) {
 }
 
 const styles = StyleSheet.create({
-  range: { marginTop: space.xl },
+  range: { marginTop: space.xxl + space.xxs },
   section: { marginTop: space.xxl + space.xxs },
   card: { marginTop: space.md, gap: space.md },
   chips: { gap: space.sm, paddingHorizontal: space.lg },

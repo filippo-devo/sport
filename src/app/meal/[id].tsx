@@ -2,7 +2,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { TrashIcon } from '../../components/icons';
+import { PencilSimpleIcon, TrashIcon } from '../../components/icons';
+import { ManualSheet } from '../../components/ManualSheet';
 import { Button, Card, Divider, SectionTitle } from '../../components/ui/controls';
 import { NavBar } from '../../components/ui/headers';
 import { Screen } from '../../components/ui/layout';
@@ -10,6 +11,7 @@ import { ConfirmSheet } from '../../components/ui/sheets';
 import { FOOD_BY_ID } from '../../data/foods';
 import { useT } from '../../i18n';
 import { fromKey } from '../../lib/date';
+import { entryName } from '../../lib/meals';
 import { formatNumber } from '../../lib/units';
 import { useStore } from '../../store';
 import { entryNutrients } from '../../store/derived';
@@ -22,9 +24,12 @@ export default function MealDetail() {
   const entry = useStore((s) => s.meals.find((m) => m.id === id));
   const goals = useStore((s) => s.goals);
   const deleteMeal = useStore((s) => s.deleteMeal);
+  const updateMeal = useStore((s) => s.updateMeal);
   const [confirm, setConfirm] = useState(false);
+  const [editing, setEditing] = useState(false);
   const food = entry ? FOOD_BY_ID[entry.foodId] : undefined;
-  if (!entry || !food) return <Screen top={<NavBar />}>{null}</Screen>;
+  if (!entry || (!food && !entry.manual)) return <Screen top={<NavBar />}>{null}</Screen>;
+  const name = entryName(entry, L);
 
   const n = entryNutrients(entry);
   const kcalP = n.protein * 4;
@@ -39,7 +44,7 @@ export default function MealDetail() {
 
   return (
     <Screen top={<NavBar title={t(`meal.${entry.meal}`)} />}>
-      <Text style={styles.title}>{L(food.name)}</Text>
+      <Text style={styles.title}>{name}</Text>
       <Text style={styles.sub}>
         {dateLong(fromKey(entry.date))} · {entry.time}
       </Text>
@@ -54,9 +59,13 @@ export default function MealDetail() {
         </Card>
         <Card style={styles.stat}>
           <Text style={styles.statLabel}>{t('mealDetail.amount')}</Text>
-          <Text style={styles.statValue}>
-            {entry.grams} <Text style={styles.statUnit}>g</Text>
-          </Text>
+          {entry.manual ? (
+            <Text style={[styles.statValue, { fontSize: 17 }]}>{t('mealDetail.manual')}</Text>
+          ) : (
+            <Text style={styles.statValue}>
+              {entry.grams} <Text style={styles.statUnit}>g</Text>
+            </Text>
+          )}
           <Text style={styles.statFoot}>
             {t('mealDetail.time')} {entry.time}
           </Text>
@@ -82,20 +91,25 @@ export default function MealDetail() {
             </View>
           </View>
         ))}
-        <Divider />
-        <View style={styles.macroRow}>
-          <Text style={[styles.macroName, { marginLeft: 0 }]}>{t('mealDetail.fiber')}</Text>
-          <Text style={styles.macroG}>{formatNumber(n.fiber, 1)} g</Text>
-        </View>
-        <Divider />
-        <View style={styles.macroRow}>
-          <Text style={[styles.macroName, { marginLeft: 0 }]}>{t('mealDetail.sugar')}</Text>
-          <Text style={styles.macroG}>{formatNumber(n.sugar, 1)} g</Text>
-        </View>
+        {food && (
+          <>
+            <Divider />
+            <View style={styles.macroRow}>
+              <Text style={[styles.macroName, { marginLeft: 0 }]}>{t('mealDetail.fiber')}</Text>
+              <Text style={styles.macroG}>{formatNumber(n.fiber, 1)} g</Text>
+            </View>
+            <Divider />
+            <View style={styles.macroRow}>
+              <Text style={[styles.macroName, { marginLeft: 0 }]}>{t('mealDetail.sugar')}</Text>
+              <Text style={styles.macroG}>{formatNumber(n.sugar, 1)} g</Text>
+            </View>
+          </>
+        )}
       </Card>
 
-      <SectionTitle style={styles.section} title={t('mealDetail.per100')} />
-      <Card style={styles.per100}>
+      {food && <SectionTitle style={styles.section} title={t('mealDetail.per100')} />}
+      {food && (
+        <Card style={styles.per100}>
         {[
           ['kcal', String(food.kcal)],
           [t('macro.protein'), `${food.protein} g`],
@@ -108,13 +122,24 @@ export default function MealDetail() {
           </View>
         ))}
       </Card>
+      )}
 
+      {entry.manual && <Button label={t('mealDetail.edit')} variant="secondary" icon={PencilSimpleIcon} onPress={() => setEditing(true)} style={styles.section} />}
+      <ManualSheet
+        visible={editing}
+        initial={entry.manual}
+        onClose={() => setEditing(false)}
+        onAdd={(manual) => {
+          updateMeal(entry.id, { manual });
+          setEditing(false);
+        }}
+      />
       <Button label={t('mealDetail.remove')} variant="danger" icon={TrashIcon} onPress={() => setConfirm(true)} style={styles.section} />
 
       <ConfirmSheet
         visible={confirm}
         title={t('mealDetail.remove')}
-        body={L(food.name)}
+        body={name}
         confirmLabel={t('common.delete')}
         destructive
         onCancel={() => setConfirm(false)}

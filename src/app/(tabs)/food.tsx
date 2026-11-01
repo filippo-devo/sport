@@ -3,15 +3,17 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CaretLeftIcon, CaretRightIcon, ClockCounterClockwiseIcon, PlusIcon } from '../../components/icons';
 import { MacroRings } from '../../components/MacroBars';
+import { SupplementsCard } from '../../components/nutrition/SupplementsCard';
+import { WaterCard } from '../../components/nutrition/WaterCard';
 import { StartWorkoutButton } from '../../components/StartWorkoutButton';
 import { Card, Divider, IconButton, SectionTitle } from '../../components/ui/controls';
 import { TabHeader } from '../../components/ui/headers';
 import { BottomFade, Screen, useLayout } from '../../components/ui/layout';
 import { Ring } from '../../components/ui/Ring';
-import { FOOD_BY_ID } from '../../data/foods';
 import type { MealType } from '../../data/types';
 import { useT } from '../../i18n';
 import { addDays, dayKey, fromKey, weekDays } from '../../lib/date';
+import { entryName } from '../../lib/meals';
 import { formatNumber } from '../../lib/units';
 import { useStore } from '../../store';
 import { entryNutrients, mealsOn, sumNutrients } from '../../store/derived';
@@ -114,6 +116,13 @@ export default function FoodScreen() {
         <MacroRings totals={totals} goals={goals} size={Math.min(78, Math.floor((contentWidth - space.lg * 2) / 3) - 16)} />
       </Card>
 
+      <View style={styles.meal}>
+        <WaterCard date={date} />
+      </View>
+      <View style={styles.meal}>
+        <SupplementsCard date={date} />
+      </View>
+
       {/* Meals */}
       {MEALS.map((m) => {
         const items = entries.filter((e) => e.meal === m);
@@ -123,18 +132,18 @@ export default function FoodScreen() {
             <SectionTitle title={t(`meal.${m}`)} aside={items.length ? `${formatNumber(kcal, 0)} kcal` : undefined} />
             <Card style={styles.mealCard}>
               {items.map((e, i) => {
-                const f = FOOD_BY_ID[e.foodId];
+                const name = entryName(e, L);
                 const n = entryNutrients(e);
                 return (
                   <View key={e.id}>
                     {i > 0 && <Divider />}
-                    <Pressable style={styles.item} onPress={() => router.push(`/meal/${e.id}`)} accessibilityRole="button" accessibilityLabel={f ? L(f.name) : ''}>
+                    <Pressable style={styles.item} onPress={() => router.push(`/meal/${e.id}`)} accessibilityRole="button" accessibilityLabel={name}>
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={styles.itemName} numberOfLines={1}>
-                          {f ? L(f.name) : '—'}
+                          {name}
                         </Text>
                         <Text style={styles.itemMeta} numberOfLines={1}>
-                          {e.grams} g · {e.time} · <Text style={{ color: colors.protein }}>{t('macro.p')} {Math.round(n.protein)}</Text> ·{' '}
+                          {e.manual ? '' : `${e.grams} g · `}{e.time} · <Text style={{ color: colors.protein }}>{t('macro.p')} {Math.round(n.protein)}</Text> ·{' '}
                           <Text style={{ color: colors.carbs }}>{t('macro.c')} {Math.round(n.carbs)}</Text> ·{' '}
                           <Text style={{ color: colors.fat }}>{t('macro.f')} {Math.round(n.fat)}</Text>
                         </Text>

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ExerciseTile } from '../../components/EquipmentGlyph';
-import { TrashIcon, TrophyIcon } from '../../components/icons';
+import { CheckIcon, CopyIcon, TrashIcon, TrophyIcon } from '../../components/icons';
 import { Button, Card, Divider, SectionTitle } from '../../components/ui/controls';
 import { NavBar } from '../../components/ui/headers';
 import { Screen } from '../../components/ui/layout';
@@ -24,7 +24,9 @@ export default function SessionScreen() {
   const sessions = useStore((s) => s.sessions);
   const units = useStore((s) => s.settings.units);
   const deleteSession = useStore((s) => s.deleteSession);
+  const saveSessionAsRoutine = useStore((s) => s.saveSessionAsRoutine);
   const [confirm, setConfirm] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
   const session = sessions.find((s) => s.id === id);
   if (!session) return <Screen top={<NavBar />}>{null}</Screen>;
 
@@ -122,6 +124,17 @@ export default function SessionScreen() {
           );
         })}
       </View>
+
+      {!session.routineId || !isFresh ? (
+        <Button
+          label={savedId ? t('summary.saved') : t('summary.saveAsRoutine')}
+          icon={savedId ? CheckIcon : CopyIcon}
+          variant="secondary"
+          disabled={!!savedId}
+          onPress={() => setSavedId(saveSessionAsRoutine(session.id, L(session.name)))}
+          style={styles.section}
+        />
+      ) : null}
 
       {isFresh ? (
         <Button label={t('common.done')} onPress={() => router.replace('/train')} style={styles.section} />
