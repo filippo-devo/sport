@@ -20,11 +20,11 @@ export const en = {
   'common.g': 'g',
   'common.profile': 'Open profile',
 
-  'tabs.today': 'Today',
   'tabs.train': 'Train',
   'tabs.progress': 'Progress',
   'tabs.food': 'Food',
   'tabs.library': 'Library',
+  'tabs.profile': 'Profile',
 
   'muscle.chest': 'Chest',
   'muscle.back': 'Back',

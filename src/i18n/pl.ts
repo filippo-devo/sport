@@ -22,11 +22,11 @@ export const pl: Dict = {
   'common.g': 'g',
   'common.profile': 'Otwórz profil',
 
-  'tabs.today': 'Dziś',
   'tabs.train': 'Trening',
   'tabs.progress': 'Postępy',
   'tabs.food': 'Jedzenie',
   'tabs.library': 'Biblioteka',
+  'tabs.profile': 'Profil',
 
   'muscle.chest': 'Klatka',
   'muscle.back': 'Plecy',

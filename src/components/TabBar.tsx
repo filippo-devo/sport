@@ -7,16 +7,16 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useT, type TKey } from '../i18n';
 import { colors, layout, radius, type } from '../theme/tokens';
 import { ActiveWorkoutBar } from './ActiveWorkoutBar';
-import { BarbellIcon, BooksIcon, ChartLineUpIcon, ForkKnifeIcon, HouseSimpleIcon, type Icon } from './icons';
+import { BarbellIcon, BooksIcon, ChartLineUpIcon, ForkKnifeIcon, UserIcon, type Icon } from './icons';
 import { BottomFade, useLayout } from './ui/layout';
 
 // Route name → label and icon. Order follows the Tabs layout.
 const TABS: Record<string, { label: TKey; icon: Icon }> = {
-  index: { label: 'tabs.today', icon: HouseSimpleIcon },
   train: { label: 'tabs.train', icon: BarbellIcon },
   progress: { label: 'tabs.progress', icon: ChartLineUpIcon },
   food: { label: 'tabs.food', icon: ForkKnifeIcon },
   library: { label: 'tabs.library', icon: BooksIcon },
+  profile: { label: 'tabs.profile', icon: UserIcon },
 };
 
 // iOS 26+ renders Apple's own Liquid Glass material; everywhere else the bar is
