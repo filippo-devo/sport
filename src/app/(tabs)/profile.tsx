@@ -3,19 +3,19 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
-import { CaretRightIcon, TrashIcon, UserIcon } from '../components/icons';
-import { Button, Card, Divider, Segmented, SectionTitle } from '../components/ui/controls';
-import { NavBar } from '../components/ui/headers';
-import { Screen } from '../components/ui/layout';
-import { ConfirmSheet, NumberSheet } from '../components/ui/sheets';
-import type { Goals, Lang, Units } from '../data/types';
-import { useT, type TKey } from '../i18n';
-import { clock } from '../lib/date';
-import { formatVolume, formatWeight, fromDisplayWeight, toDisplayWeight } from '../lib/units';
-import { useStore } from '../store';
-import { sessionVolume } from '../store/derived';
-import { goalWeekStreak } from '../store/stats';
-import { colors, fonts, space, type } from '../theme/tokens';
+import { CaretRightIcon, TrashIcon, UserIcon } from '../../components/icons';
+import { Button, Card, Divider, Segmented, SectionTitle } from '../../components/ui/controls';
+import { TabHeader } from '../../components/ui/headers';
+import { Screen } from '../../components/ui/layout';
+import { ConfirmSheet, NumberSheet } from '../../components/ui/sheets';
+import type { Goals, Lang, Units } from '../../data/types';
+import { useT, type TKey } from '../../i18n';
+import { clock } from '../../lib/date';
+import { formatVolume, formatWeight, fromDisplayWeight, toDisplayWeight } from '../../lib/units';
+import { useStore } from '../../store';
+import { sessionVolume } from '../../store/derived';
+import { goalWeekStreak } from '../../store/stats';
+import { colors, fonts, space, type } from '../../theme/tokens';
 
 type GoalKey = keyof Goals;
 
@@ -59,7 +59,8 @@ export default function ProfileScreen() {
   const row = GOAL_ROWS.find((r) => r.key === editing);
 
   return (
-    <Screen top={<NavBar title={t('profile.title')} />}>
+    <Screen tabBar>
+      <TabHeader title={t('profile.title')} />
       <View style={styles.hero}>
         <View style={styles.avatar}>
           {initials ? <Text style={styles.avatarText}>{initials}</Text> : <UserIcon size={38} color={colors.textOnAccent} weight="fill" />}

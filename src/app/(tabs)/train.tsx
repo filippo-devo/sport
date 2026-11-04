@@ -3,10 +3,10 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ExerciseRow } from '../../components/ExerciseRow';
-import { CaretRightIcon, PlusIcon, FireIcon, RobotIcon } from '../../components/icons';
+import { BooksIcon, CaretRightIcon, PlusIcon, FireIcon, RobotIcon } from '../../components/icons';
 import { StartWorkoutButton } from '../../components/StartWorkoutButton';
 import { TargetMuscles } from '../../components/TargetMuscles';
-import { Card, Divider, SectionTitle } from '../../components/ui/controls';
+import { Card, Divider, IconButton, SectionTitle } from '../../components/ui/controls';
 import { TabHeader } from '../../components/ui/headers';
 import { BottomFade, Screen, useLayout } from '../../components/ui/layout';
 import { useStartWorkout } from '../../components/useStartWorkout';
@@ -60,12 +60,15 @@ export default function TrainScreen() {
         eyebrow={dateLong(new Date())}
         title={t('train.title')}
         right={
-          streak > 0 ? (
-            <View style={styles.streak} accessible accessibilityLabel={`${t('today.streak')}: ${tn('unit.weeks', streak)}`}>
-              <FireIcon size={18} color={colors.accent} weight="fill" />
-              <Text style={styles.streakText}>{streak}</Text>
-            </View>
-          ) : null
+          <>
+            {streak > 0 ? (
+              <View style={styles.streak} accessible accessibilityLabel={`${t('today.streak')}: ${tn('unit.weeks', streak)}`}>
+                <FireIcon size={18} color={colors.accent} weight="fill" />
+                <Text style={styles.streakText}>{streak}</Text>
+              </View>
+            ) : null}
+            <IconButton icon={BooksIcon} label={t('library.title')} onPress={() => router.push('/library')} />
+          </>
         }
       />
 

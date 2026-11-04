@@ -116,7 +116,7 @@ export const layout = {
   gutter: 16, // 38 px @ 920-px render ≈ 16 pt
   maxContentWidth: 480, // keeps the phone layout intact on tablets / desktop web
   control: 44, // circular glass buttons (≈ 44 pt)
-  tabBarHeight: 62, // floating bar ≈ 60 pt, inset ≈ 21 pt from screen edges
+  tabBarHeight: 68, // floating bar with large icons, inset ≈ 21 pt from screen edges
   navBar: 56,
   tabBarInset: 20,
   ctaHeight: 52,

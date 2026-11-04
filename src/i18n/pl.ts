@@ -27,6 +27,7 @@ export const pl: Dict = {
   'tabs.progress': 'Postępy',
   'tabs.food': 'Jedzenie',
   'tabs.library': 'Biblioteka',
+  'tabs.profile': 'Profil',
 
   'muscle.chest': 'Klatka',
   'muscle.back': 'Plecy',
