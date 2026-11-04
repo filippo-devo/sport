@@ -1,16 +1,18 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import {
   BarbellIcon,
   BellIcon,
+  CameraIcon,
   CaretRightIcon,
   FireIcon,
-  FootprintsIcon,
   ForkKnifeIcon,
   DropIcon,
   GearSixIcon,
+  PencilSimpleIcon,
+  FootprintsIcon,
   QrCodeIcon,
   ScalesIcon,
   StackIcon,
@@ -18,12 +20,13 @@ import {
   UsersIcon,
   type Icon,
 } from '../../components/icons';
-import { Card, Divider, IconButton, SectionTitle, pressedStyle } from '../../components/ui/controls';
+import { Button, Card, Divider, IconButton, SectionTitle, pressedStyle } from '../../components/ui/controls';
 import { TabHeader } from '../../components/ui/headers';
 import { Screen } from '../../components/ui/layout';
-import { NumberSheet } from '../../components/ui/sheets';
+import { NumberSheet, Sheet } from '../../components/ui/sheets';
 import type { Goals } from '../../data/types';
 import { useT, type TKey } from '../../i18n';
+import { deletePhotoFile, pickPhoto } from '../../lib/photos';
 import { formatVolume, formatWeight, fromDisplayWeight, toDisplayWeight } from '../../lib/units';
 import { useStore } from '../../store';
 import { sessionVolume } from '../../store/derived';
@@ -49,6 +52,7 @@ export default function ProfileScreen() {
   const { t, tn } = useT();
   const s = useStore();
   const [editing, setEditing] = useState<GoalKey | null>(null);
+  const [editProfile, setEditProfile] = useState(false);
   const units = s.settings.units;
   const g = s.goals;
 
@@ -73,25 +77,19 @@ export default function ProfileScreen() {
         right={<IconButton icon={GearSixIcon} label={t('profile.settings')} onPress={() => router.push('/settings')} />}
       />
 
-      <Card style={styles.hero}>
-        <View style={styles.avatar}>
-          {initials ? <Text style={styles.avatarText}>{initials}</Text> : <UserIcon size={30} color={colors.textOnAccent} weight="fill" />}
+      <Card style={styles.hero} onPress={() => setEditProfile(true)} accessibilityLabel={t('profile.editProfile')}>
+        <Avatar uri={s.settings.avatarUri} initials={initials} size={64} />
+        <Text style={[styles.name, !s.settings.name && { color: colors.textSecondary }]} numberOfLines={1}>
+          {s.settings.name || t('profile.namePlaceholder')}
+        </Text>
+        <View style={styles.editDot}>
+          <PencilSimpleIcon size={16} color={colors.textPrimary} weight="bold" />
         </View>
-        <TextInput
-          value={s.settings.name}
-          onChangeText={(name) => s.setSettings({ name })}
-          placeholder={t('profile.namePlaceholder')}
-          placeholderTextColor={colors.textSecondary}
-          style={styles.name}
-          accessibilityLabel={t('profile.name')}
-          maxLength={40}
-          returnKeyType="done"
-        />
       </Card>
 
       <Card style={styles.stats}>
         <Stat icon={BarbellIcon} label={t('profile.workouts')} value={String(s.sessions.length)} />
-        <Stat icon={StackIcon} label={t('profile.volumeShort')} value={formatVolume(totalVolume, units)} border />
+        <Stat icon={StackIcon} label={t('profile.weightLifted')} value={formatVolume(totalVolume, units)} border />
         <Stat icon={FireIcon} iconColor={colors.warning} label={t('today.streak')} value={tn('unit.days', streak)} border />
       </Card>
 
@@ -155,12 +153,12 @@ export default function ProfileScreen() {
           a11y={t('profile.edit', { label: t('profile.workoutsPerWeek') })}
         />
         <GoalTile
-          icon={BarbellIcon}
-          tint={colors.success}
-          label={t('profile.workoutsPerMonth')}
-          value={String(g.workoutsPerMonth)}
-          onPress={() => setEditing('workoutsPerMonth')}
-          a11y={t('profile.edit', { label: t('profile.workoutsPerMonth') })}
+          icon={ScalesIcon}
+          tint={colors.textPrimary}
+          label={t('profile.targetWeight')}
+          value={formatWeight(g.targetWeight, units)}
+          onPress={() => setEditing('targetWeight')}
+          a11y={t('profile.edit', { label: t('profile.targetWeight') })}
         />
         <GoalTile
           icon={FootprintsIcon}
@@ -179,15 +177,6 @@ export default function ProfileScreen() {
           onPress={() => setEditing('waterMl')}
           a11y={t('profile.edit', { label: t('profile.waterGoal') })}
         />
-        <GoalTile
-          icon={ScalesIcon}
-          tint={colors.textPrimary}
-          label={t('profile.targetWeight')}
-          value={formatWeight(g.targetWeight, units)}
-          onPress={() => setEditing('targetWeight')}
-          wide
-          a11y={t('profile.edit', { label: t('profile.targetWeight') })}
-        />
       </View>
 
       {row && (
@@ -204,7 +193,92 @@ export default function ProfileScreen() {
           onSave={(v) => s.setGoals({ [row.key]: row.key === 'targetWeight' ? Math.round(fromDisplayWeight(v, units) * 10) / 10 : v })}
         />
       )}
+      <ProfileSheet visible={editProfile} onClose={() => setEditProfile(false)} />
     </Screen>
+  );
+}
+
+function Avatar({ uri, initials, size }: { uri?: string; initials: string; size: number }) {
+  const box = { width: size, height: size, borderRadius: size / 2 };
+  if (uri) return <Image source={{ uri }} style={[box, { backgroundColor: colors.surfaceRaised }]} />;
+  return (
+    <View style={[styles.avatar, box]}>
+      {initials ? (
+        <Text style={[styles.avatarText, { fontSize: size * 0.38 }]}>{initials}</Text>
+      ) : (
+        <UserIcon size={size * 0.47} color={colors.textOnAccent} weight="fill" />
+      )}
+    </View>
+  );
+}
+
+/** Edit name and profile picture. */
+function ProfileSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { t } = useT();
+  const settings = useStore((x) => x.settings);
+  const setSettings = useStore((x) => x.setSettings);
+  const [name, setName] = useState(settings.name);
+  const [uri, setUri] = useState(settings.avatarUri);
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    // Reset the draft each time the sheet opens.
+    setWasVisible(visible);
+    if (visible) {
+      setName(settings.name);
+      setUri(settings.avatarUri);
+    }
+  }
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join('');
+
+  const choose = async () => {
+    const photo = await pickPhoto();
+    if (photo) setUri(photo.uri);
+  };
+  const save = () => {
+    if (settings.avatarUri && settings.avatarUri !== uri) deletePhotoFile(settings.avatarUri);
+    setSettings({ name: name.trim(), avatarUri: uri });
+    onClose();
+  };
+
+  return (
+    <Sheet visible={visible} onClose={onClose} title={t('profile.editProfile')}>
+      <View style={styles.sheetBody}>
+        <Pressable onPress={choose} accessibilityRole="button" accessibilityLabel={t('profile.changePhoto')} style={styles.sheetAvatar}>
+          <Avatar uri={uri} initials={initials} size={96} />
+          <View style={styles.camBadge}>
+            <CameraIcon size={16} color={colors.textPrimary} weight="bold" />
+          </View>
+        </Pressable>
+        <View style={styles.photoActions}>
+          <Pressable onPress={choose} accessibilityRole="button" hitSlop={6}>
+            <Text style={styles.link}>{uri ? t('profile.changePhoto') : t('profile.addPhoto')}</Text>
+          </Pressable>
+          {uri ? (
+            <Pressable onPress={() => setUri(undefined)} accessibilityRole="button" hitSlop={6}>
+              <Text style={[styles.link, { color: colors.danger }]}>{t('profile.removePhoto')}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+        <Text style={styles.fieldLabel}>{t('profile.name')}</Text>
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          placeholder={t('profile.namePlaceholder')}
+          placeholderTextColor={colors.textSecondary}
+          style={styles.input}
+          accessibilityLabel={t('profile.name')}
+          maxLength={40}
+          returnKeyType="done"
+          onSubmitEditing={save}
+        />
+        <Button label={t('common.save')} onPress={save} />
+      </View>
+    </Sheet>
   );
 }
 
@@ -245,9 +319,9 @@ function ListRow({ icon, tint, label, sub, onPress }: { icon: Icon; tint: string
   );
 }
 
-function GoalTile(p: { icon: Icon; tint: string; label: string; value: string; unit?: string; onPress: () => void; a11y: string; wide?: boolean }) {
+function GoalTile(p: { icon: Icon; tint: string; label: string; value: string; unit?: string; onPress: () => void; a11y: string }) {
   return (
-    <Card style={[styles.tile, p.wide && styles.tileWide]} onPress={p.onPress} accessibilityLabel={p.a11y}>
+    <Card style={styles.tile} onPress={p.onPress} accessibilityLabel={p.a11y}>
       <View style={styles.tileTop}>
         <IconTile icon={p.icon} tint={p.tint} />
         <CaretRightIcon size={14} color={colors.textSecondary} weight="bold" />
@@ -266,15 +340,40 @@ function GoalTile(p: { icon: Icon; tint: string; label: string; value: string; u
 const styles = StyleSheet.create({
   hero: { flexDirection: 'row', alignItems: 'center', gap: space.lg, marginTop: space.sm },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
     backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontFamily: fonts.bold, fontSize: 24, color: colors.textOnAccent },
-  name: { ...type.display, fontSize: 24, color: colors.textPrimary, flex: 1, paddingVertical: 4 },
+  avatarText: { fontFamily: fonts.bold, color: colors.textOnAccent },
+  name: { ...type.display, fontSize: 24, color: colors.textPrimary, flex: 1 },
+  editDot: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.control, alignItems: 'center', justifyContent: 'center' },
+  sheetBody: { gap: space.md, alignItems: 'stretch' },
+  sheetAvatar: { alignSelf: 'center', marginTop: space.sm },
+  camBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.control,
+    borderWidth: 2,
+    borderColor: colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoActions: { flexDirection: 'row', justifyContent: 'center', gap: space.xl },
+  link: { fontFamily: fonts.semibold, fontSize: 15, color: colors.accent },
+  fieldLabel: { ...type.caption, color: colors.textSecondary, marginTop: space.sm },
+  input: {
+    ...type.body,
+    color: colors.textPrimary,
+    backgroundColor: colors.control,
+    borderRadius: radius.md,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    marginBottom: space.sm,
+  },
   stats: { flexDirection: 'row', marginTop: space.md, paddingHorizontal: 0 },
   stat: { flex: 1, gap: 6, minWidth: 0, paddingHorizontal: space.md },
   statBorder: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.cardStroke },
@@ -296,7 +395,6 @@ const styles = StyleSheet.create({
   hint: { ...type.caption, color: colors.textSecondary },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm },
   tile: { width: '48.8%', gap: space.sm, minHeight: 118 },
-  tileWide: { width: '100%', minHeight: 0 },
   tileTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   tileLabel: { ...type.caption, color: colors.textSecondary },
   tileValue: { fontFamily: fonts.bold, fontSize: 20, color: colors.textPrimary },

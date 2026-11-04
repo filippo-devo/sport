@@ -722,4 +722,9 @@ export const pl: Dict = {
   'profile.volumeShort': "Objętość",
   'profile.accountSection': "Konto",
   'profile.gymThisMonth': "W tym miesiącu: {n}",
+  'profile.weightLifted': "Ciężar",
+  'profile.editProfile': "Edytuj profil",
+  'profile.changePhoto': "Zmień zdjęcie",
+  'profile.addPhoto': "Dodaj zdjęcie",
+  'profile.removePhoto': "Usuń",
 };

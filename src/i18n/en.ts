@@ -720,6 +720,11 @@ export const en = {
   'profile.volumeShort': "Volume",
   'profile.accountSection': "Account",
   'profile.gymThisMonth': "{n} this month",
+  'profile.weightLifted': "Weight lifted",
+  'profile.editProfile': "Edit profile",
+  'profile.changePhoto': "Change photo",
+  'profile.addPhoto': "Add photo",
+  'profile.removePhoto': "Remove",
 } as const;
 
 export type Dict = Record<keyof typeof en, string>;

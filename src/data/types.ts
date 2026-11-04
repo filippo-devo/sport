@@ -207,6 +207,8 @@ export type Settings = {
   haptics: boolean;
   /** How often the Today screen asks for a progress photo, in days. */
   photoEveryDays: number;
+  /** Profile picture (a private copy, or a data URI on web). */
+  avatarUri?: string;
 };
 
 /** Small stat tiles at the top of Today (the user picks up to three). */
