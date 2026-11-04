@@ -20,6 +20,7 @@ export const en = {
   'common.g': 'g',
   'common.profile': 'Open profile',
 
+  'tabs.today': 'Today',
   'tabs.train': 'Train',
   'tabs.progress': 'Progress',
   'tabs.food': 'Food',
