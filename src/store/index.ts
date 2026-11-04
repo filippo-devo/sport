@@ -14,8 +14,6 @@ import type {
   ManualNutrition,
   MealEntry,
   MealType,
-  MeasureKey,
-  Measurement,
   Photo,
   Program,
   ReminderSettings,
@@ -41,7 +39,6 @@ type Data = {
   active: ActiveWorkout | null;
   weighIns: WeighIn[];
   photos: Photo[];
-  measurements: Measurement[];
   meals: MealEntry[];
   /** The user's own workouts and plans (built-in ones live in data/programs). */
   routines: Routine[];
@@ -79,7 +76,6 @@ type Actions = {
   logWeight: (kg: number, date?: string) => void;
   addPhoto: (photo: Photo) => void;
   deletePhoto: (id: string) => void;
-  logMeasurement: (key: MeasureKey, value: number, date?: string) => void;
   deleteMeal: (id: string) => void;
   addFood: (entry: { foodId: string; grams: number; meal: MealType; date?: string }) => void;
   addManual: (entry: { manual: ManualNutrition; meal: MealType; date?: string }) => void;
@@ -138,7 +134,6 @@ function initialData(): Data {
     active: null,
     weighIns: [],
     photos: [],
-    measurements: [],
     meals: [],
     routines: [],
     programs: [],
@@ -292,8 +287,6 @@ export const useStore = create<AppState>()(
           set({ weighIns: [...get().weighIns.filter((w) => w.date !== date), { date, kg }] }),
         addPhoto: (photo) => set({ photos: [photo, ...get().photos] }),
         deletePhoto: (id) => set({ photos: get().photos.filter((p) => p.id !== id) }),
-        logMeasurement: (key, value, date = dayKey()) =>
-          set({ measurements: [...get().measurements.filter((m) => !(m.key === key && m.date === date)), { date, key, value }] }),
         deleteMeal: (id) => set({ meals: get().meals.filter((m) => m.id !== id) }),
         addFood: ({ foodId, grams, meal, date = dayKey() }) =>
           set({ meals: [...get().meals, { id: uid(), date, meal, foodId, grams, time: hhmm() }] }),
@@ -416,7 +409,6 @@ export const useStore = create<AppState>()(
           active: s.active,
           weighIns: s.weighIns,
           photos: s.photos,
-          measurements: s.measurements,
           meals: s.meals,
           routines: s.routines,
           programs: s.programs,
