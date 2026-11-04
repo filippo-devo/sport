@@ -26,7 +26,7 @@ const MEALS: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
  */
 export default function AddMeal() {
   const { t, L, lang } = useT();
-  const params = useLocalSearchParams<{ meal?: MealType; mode?: 'manual' | 'voice' }>();
+  const params = useLocalSearchParams<{ meal?: MealType; mode?: 'manual' | 'voice' | 'search' }>();
   const meals = useStore((s) => s.meals);
   const addFood = useStore((s) => s.addFood);
   const addManual = useStore((s) => s.addManual);
@@ -101,6 +101,7 @@ export default function AddMeal() {
           placeholderTextColor={colors.textSecondary}
           style={styles.input}
           autoCorrect={false}
+          autoFocus={params.mode === 'search'}
           accessibilityLabel={t('addMeal.search')}
         />
       </View>

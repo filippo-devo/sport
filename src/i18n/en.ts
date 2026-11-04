@@ -702,6 +702,21 @@ export const en = {
   'progress.olderPhotos': "Earlier photos",
   'progress.prevMonth': "Previous month",
   'progress.nextMonth': "Next month",
+  'food.kcalLeft': "kcal left",
+  'food.kcalOver': "kcal over",
+  'food.quickSearch': "Search",
+  'food.quickVoice': "Voice",
+  'food.quickRecent': "Recent",
+  'food.quickFast': "Quick",
+  'food.meals': "Meals",
+  'food.suggested': "Suggested ~{n} kcal",
+  'food.items': "{n} item|{n} items",
+  'food.backToday': "Back to today",
+  'food.waterTitle': "Water",
+  'food.waterRemove': "Remove last glass",
+  'food.waterAdd': "Add a glass (250 ml)",
+  'food.goalLabel': "Goal",
+  'food.suppAdd': "Add supplements",
 } as const;
 
 export type Dict = Record<keyof typeof en, string>;

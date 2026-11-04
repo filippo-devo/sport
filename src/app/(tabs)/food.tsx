@@ -1,214 +1,416 @@
 import { router } from 'expo-router';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
-import { CaretLeftIcon, CaretRightIcon, ClockCounterClockwiseIcon, PlusIcon } from '../../components/icons';
-import { MacroRings } from '../../components/MacroBars';
-import { SupplementsCard } from '../../components/nutrition/SupplementsCard';
-import { WaterCard } from '../../components/nutrition/WaterCard';
-import { StartWorkoutButton } from '../../components/StartWorkoutButton';
-import { Card, Divider, IconButton, SectionTitle } from '../../components/ui/controls';
+import {
+  BowlFoodIcon,
+  CheckIcon,
+  ClockCounterClockwiseIcon,
+  CoffeeIcon,
+  CookieIcon,
+  DropIcon,
+  ForkKnifeIcon,
+  type Icon,
+  LightningIcon,
+  MagnifyingGlassIcon,
+  MicrophoneIcon,
+  MinusIcon,
+  PillIcon,
+  PlusIcon,
+} from '../../components/icons';
+import { dosesPerDay, takenOn } from '../../components/nutrition/SupplementsCard';
+import { WATER } from '../../components/nutrition/WaterCard';
+import { Card, IconButton } from '../../components/ui/controls';
 import { TabHeader } from '../../components/ui/headers';
-import { BottomFade, Screen, useLayout } from '../../components/ui/layout';
-import { Ring } from '../../components/ui/Ring';
+import { Screen } from '../../components/ui/layout';
 import type { MealType } from '../../data/types';
 import { useT } from '../../i18n';
-import { addDays, dayKey, fromKey, weekDays } from '../../lib/date';
+import { dayKey, fromKey } from '../../lib/date';
 import { entryName } from '../../lib/meals';
 import { formatNumber } from '../../lib/units';
 import { useStore } from '../../store';
 import { entryNutrients, mealsOn, sumNutrients } from '../../store/derived';
 import { useUi } from '../../store/ui';
-import { colors, fonts, layout, radius, space, type } from '../../theme/tokens';
+import { colors, fonts, radius, space, type } from '../../theme/tokens';
 
-const MEALS: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
+const MEALS: { type: MealType; icon: Icon; share: number }[] = [
+  { type: 'breakfast', icon: CoffeeIcon, share: 0.25 },
+  { type: 'lunch', icon: BowlFoodIcon, share: 0.35 },
+  { type: 'dinner', icon: ForkKnifeIcon, share: 0.3 },
+  { type: 'snack', icon: CookieIcon, share: 0.1 },
+];
+
+const GLASS_ML = 250;
 
 export default function FoodScreen() {
-  const { t, L, weekdayShort, dateLong } = useT();
-  const { contentWidth, tabBarSpace } = useLayout();
+  const { t, tn, dateLong } = useT();
   const meals = useStore((s) => s.meals);
   const goals = useStore((s) => s.goals);
-  const active = useStore((s) => s.active);
   const date = useUi((s) => s.foodDate);
   const setDate = useUi((s) => s.setFoodDate);
 
   const today = dayKey();
-  const selected = fromKey(date);
   const entries = mealsOn(meals, date);
   const totals = sumNutrients(entries);
   const left = goals.kcal - totals.kcal;
-  const days = weekDays(selected);
-  const chip = Math.min(40, Math.floor(contentWidth / 7) - 8);
-  const label = date === today ? t('common.today') : date === dayKey(addDays(new Date(), -1)) ? t('common.yesterday') : dateLong(selected);
-  const ctaBottom = tabBarSpace - space.xxl + space.md + (active ? 62 : 0);
+  const addMeal = (params: Record<string, string> = {}) => router.push({ pathname: '/add-meal', params });
 
   return (
-    <Screen
-      tabBar
-      bottomExtra={layout.ctaHeight + space.md}
-      overlay={
-        <>
-          <BottomFade height={ctaBottom + layout.ctaHeight + 24} />
-          <StartWorkoutButton bottom={ctaBottom} label={t('food.addMeal')} onPress={() => router.push('/add-meal')} />
-        </>
-      }
-    >
+    <Screen tabBar>
       <TabHeader
+        eyebrow={date === today ? undefined : dateLong(fromKey(date))}
         title={t('food.title')}
         right={<IconButton icon={ClockCounterClockwiseIcon} label={t('food.history')} onPress={() => router.push('/food-history')} />}
       />
+      {date !== today && (
+        <Pressable style={styles.todayPill} onPress={() => setDate(today)} accessibilityRole="button">
+          <Text style={styles.todayPillText}>{t('food.backToday')}</Text>
+        </Pressable>
+      )}
 
-      {/* Day navigation */}
-      <View style={styles.dayNav}>
-        <IconButton icon={CaretLeftIcon} label={t('food.prevDay')} size={36} tone="surface" iconColor={colors.textPrimary} onPress={() => setDate(dayKey(addDays(selected, -1)))} />
-        <Text style={styles.dayLabel} numberOfLines={1}>
-          {label}
-        </Text>
-        <IconButton
-          icon={CaretRightIcon}
-          label={t('food.nextDay')}
-          size={36}
-          tone="surface"
-          iconColor={date >= today ? colors.track : colors.textPrimary}
-          onPress={() => date < today && setDate(dayKey(addDays(selected, 1)))}
-        />
-      </View>
-      <View style={styles.week}>
-        {days.map((d) => {
-          const key = dayKey(d);
-          const kcal = sumNutrients(mealsOn(meals, key)).kcal;
-          const isSel = key === date;
-          const future = key > today;
-          return (
-            <Pressable
-              key={key}
-              disabled={future}
-              onPress={() => setDate(key)}
-              style={styles.weekDay}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isSel, disabled: future }}
-              accessibilityLabel={`${weekdayShort(d)} ${d.getDate()}: ${Math.round(kcal)} kcal`}
-            >
-              <Text style={[styles.weekLabel, key === today && { color: colors.accent }]}>{weekdayShort(d)}</Text>
-              <Ring value={kcal / goals.kcal} size={chip} stroke={3} color={kcal > goals.kcal * 1.1 ? colors.protein : colors.accent} track={future ? colors.surface : colors.track}>
-                <View style={[styles.weekInner, { width: chip - 8, height: chip - 8, borderRadius: (chip - 8) / 2 }, isSel && styles.weekInnerSel]}>
-                  <Text style={[styles.weekDate, isSel && { color: colors.textOnAccent }, future && { color: colors.textSecondary }]}>{d.getDate()}</Text>
-                </View>
-              </Ring>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {/* Calories + macros */}
-      <Card style={styles.summary}>
-        <View style={styles.kcalRow}>
-          <Ring value={totals.kcal / goals.kcal} size={112} stroke={10} color={colors.accent}>
-            <Text style={styles.ringBig}>{formatNumber(totals.kcal, 0)}</Text>
-            <Text style={styles.ringSub}>kcal</Text>
-          </Ring>
-          <View style={styles.kcalStats}>
-            <Stat label={t('food.eaten')} value={formatNumber(totals.kcal, 0)} />
-            <Stat label={left >= 0 ? t('food.left') : t('food.over')} value={formatNumber(Math.abs(left), 0)} tone={left < 0 ? colors.protein : colors.accent} />
-            <Text style={styles.goal}>{t('food.goal', { n: goals.kcal })} kcal</Text>
-          </View>
+      {/* Calories gauge + macro bars */}
+      <Card style={styles.hero}>
+        <Gauge value={totals.kcal / goals.kcal} over={left < 0}>
+          <Text style={[styles.bigNum, left < 0 && { color: colors.protein }]}>{formatNumber(Math.abs(left), 0)}</Text>
+          <Text style={styles.bigSub}>{left >= 0 ? t('food.kcalLeft') : t('food.kcalOver')}</Text>
+        </Gauge>
+        <View style={styles.sides}>
+          <Side value={formatNumber(totals.kcal, 0)} label={t('food.eaten')} />
+          <Side value={formatNumber(goals.kcal, 0)} label={t('food.goalLabel')} />
         </View>
-        <Divider />
-        <MacroRings totals={totals} goals={goals} size={Math.min(78, Math.floor((contentWidth - space.lg * 2) / 3) - 16)} />
+        <View style={styles.macros}>
+          <Macro label={t('macro.protein')} value={totals.protein} goal={goals.protein} color={colors.protein} />
+          <Macro label={t('macro.carbs')} value={totals.carbs} goal={goals.carbs} color={colors.carbs} />
+          <Macro label={t('macro.fat')} value={totals.fat} goal={goals.fat} color={colors.fat} />
+        </View>
       </Card>
 
-      <View style={styles.meal}>
-        <WaterCard date={date} />
-      </View>
-      <View style={styles.meal}>
-        <SupplementsCard date={date} />
+      {/* Quick log */}
+      <View style={styles.quick}>
+        <Quick icon={MagnifyingGlassIcon} label={t('food.quickSearch')} onPress={() => addMeal({ mode: 'search' })} />
+        <Quick icon={MicrophoneIcon} label={t('food.quickVoice')} onPress={() => addMeal({ mode: 'voice' })} />
+        <Quick icon={ClockCounterClockwiseIcon} label={t('food.quickRecent')} onPress={() => addMeal()} />
+        <Quick icon={LightningIcon} label={t('food.quickFast')} onPress={() => addMeal({ mode: 'manual' })} />
       </View>
 
       {/* Meals */}
-      {MEALS.map((m) => {
-        const items = entries.filter((e) => e.meal === m);
-        const kcal = sumNutrients(items).kcal;
-        return (
-          <View key={m} style={styles.meal}>
-            <SectionTitle title={t(`meal.${m}`)} aside={items.length ? `${formatNumber(kcal, 0)} kcal` : undefined} />
-            <Card style={styles.mealCard}>
-              {items.map((e, i) => {
-                const name = entryName(e, L);
-                const n = entryNutrients(e);
-                return (
-                  <View key={e.id}>
-                    {i > 0 && <Divider />}
-                    <Pressable style={styles.item} onPress={() => router.push(`/meal/${e.id}`)} accessibilityRole="button" accessibilityLabel={name}>
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text style={styles.itemName} numberOfLines={1}>
-                          {name}
-                        </Text>
-                        <Text style={styles.itemMeta} numberOfLines={1}>
-                          {e.manual ? '' : `${e.grams} g · `}{e.time} · <Text style={{ color: colors.protein }}>{t('macro.p')} {Math.round(n.protein)}</Text> ·{' '}
-                          <Text style={{ color: colors.carbs }}>{t('macro.c')} {Math.round(n.carbs)}</Text> ·{' '}
-                          <Text style={{ color: colors.fat }}>{t('macro.f')} {Math.round(n.fat)}</Text>
-                        </Text>
-                      </View>
-                      <Text style={styles.itemKcal}>{Math.round(n.kcal)}</Text>
-                    </Pressable>
-                  </View>
-                );
-              })}
-              {items.length > 0 && <Divider />}
-              <Pressable
-                style={styles.addRow}
-                onPress={() => router.push({ pathname: '/add-meal', params: { meal: m } })}
-                accessibilityRole="button"
-                accessibilityLabel={`${t('food.addMeal')}: ${t(`meal.${m}`)}`}
-              >
-                <View style={styles.addIcon}>
-                  <PlusIcon size={14} color={colors.accent} weight="bold" />
+      <View style={styles.sectionHead}>
+        <Text style={styles.sectionTitle}>{t('food.meals')}</Text>
+        <Text style={styles.sectionAside}>
+          {formatNumber(totals.kcal, 0)} / {formatNumber(goals.kcal, 0)} kcal
+        </Text>
+      </View>
+      <Card style={styles.mealsCard}>
+        {MEALS.map((m, mi) => {
+          const items = entries.filter((e) => e.meal === m.type);
+          const kcal = sumNutrients(items).kcal;
+          const MealIcon = m.icon;
+          const logged = items.length > 0;
+          return (
+            <View key={m.type} style={[styles.meal, mi > 0 && styles.mealBorder]}>
+              <View style={styles.mealRow}>
+                <View style={[styles.mealIcon, logged && styles.mealIconDone]}>
+                  <MealIcon size={22} color={logged ? colors.accent : colors.textSecondary} />
                 </View>
-                <Text style={styles.addText}>{items.length ? t('food.addMeal') : t('food.nothing')}</Text>
-              </Pressable>
-            </Card>
-          </View>
-        );
-      })}
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.mealTitle}>{t(`meal.${m.type}`)}</Text>
+                  <Text style={styles.mealMeta} numberOfLines={1}>
+                    {logged ? `${formatNumber(kcal, 0)} kcal · ${tn('food.items', items.length)}` : t('food.suggested', { n: roundTo(goals.kcal * m.share, 50) })}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => addMeal({ meal: m.type })}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t('food.addMeal')}: ${t(`meal.${m.type}`)}`}
+                  style={({ pressed }) => [styles.plus, logged && styles.plusGhost, pressed && { opacity: 0.8 }]}
+                >
+                  <PlusIcon size={18} color={logged ? colors.accent : colors.textOnAccent} weight="bold" />
+                </Pressable>
+              </View>
+              {items.map((e) => (
+                <FoodItem key={e.id} id={e.id} entry={e} />
+              ))}
+            </View>
+          );
+        })}
+      </Card>
+
+      {/* Water + supplements */}
+      <View style={styles.pair}>
+        <WaterTile date={date} />
+        <SupplementsTile date={date} />
+      </View>
     </Screen>
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {
+const roundTo = (n: number, step: number) => Math.round(n / step) * step;
+
+function FoodItem({ id, entry }: { id: string; entry: Parameters<typeof entryNutrients>[0] }) {
+  const { t, L } = useT();
+  const n = entryNutrients(entry);
+  const name = entryName(entry, L);
   return (
-    <View>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={[styles.statValue, tone ? { color: tone } : null]}>
-        {value} <Text style={styles.statUnit}>kcal</Text>
+    <Pressable style={({ pressed }) => [styles.item, pressed && { opacity: 0.85 }]} onPress={() => router.push(`/meal/${id}`)} accessibilityRole="button" accessibilityLabel={name}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={styles.itemName} numberOfLines={1}>
+          {name}
+        </Text>
+        <View style={styles.chips}>
+          <Chip color={colors.protein} text={`${t('macro.p')} ${Math.round(n.protein)}`} />
+          <Chip color={colors.carbs} text={`${t('macro.c')} ${Math.round(n.carbs)}`} />
+          <Chip color={colors.fat} text={`${t('macro.f')} ${Math.round(n.fat)}`} />
+        </View>
+      </View>
+      <Text style={styles.itemKcal}>{Math.round(n.kcal)}</Text>
+    </Pressable>
+  );
+}
+
+function Chip({ color, text }: { color: string; text: string }) {
+  return (
+    <View style={styles.chip}>
+      <View style={[styles.dot, { backgroundColor: color }]} />
+      <Text style={styles.chipText}>{text}</Text>
+    </View>
+  );
+}
+
+/** Half-circle calorie gauge (Lifesum-style). */
+function Gauge({ value, over, children }: { value: number; over: boolean; children: ReactNode }) {
+  const w = 240;
+  const s = 14;
+  const r = (w - s) / 2;
+  const h = r + s / 2;
+  const len = Math.PI * r;
+  const p = Math.max(0, Math.min(1, value));
+  const d = `M ${s / 2} ${h} A ${r} ${r} 0 0 1 ${w - s / 2} ${h}`;
+  return (
+    <View style={{ width: w, height: h + s / 2, alignSelf: 'center', alignItems: 'center', justifyContent: 'flex-end' }}>
+      <Svg width={w} height={h + s / 2} style={StyleSheet.absoluteFill}>
+        <Path d={d} stroke={colors.control} strokeWidth={s} fill="none" strokeLinecap="round" />
+        {p > 0 && <Path d={d} stroke={over ? colors.protein : colors.accent} strokeWidth={s} fill="none" strokeLinecap="round" strokeDasharray={`${len * p} ${len}`} />}
+      </Svg>
+      <View style={{ alignItems: 'center', paddingBottom: space.xs }}>{children}</View>
+    </View>
+  );
+}
+
+function Side({ value, label }: { value: string; label: string }) {
+  return (
+    <View style={{ alignItems: 'center', minWidth: 64 }}>
+      <Text style={styles.sideValue}>{value}</Text>
+      <Text style={styles.sideLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function Macro({ label, value, goal, color }: { label: string; value: number; goal: number; color: string }) {
+  const p = goal > 0 ? Math.min(1, value / goal) : 0;
+  return (
+    <View style={{ flex: 1, minWidth: 0 }}>
+      <View style={styles.macroHead}>
+        <View style={[styles.dot, { backgroundColor: color, width: 8, height: 8 }]} />
+        <Text style={styles.macroLabel} numberOfLines={1}>
+          {label}
+        </Text>
+      </View>
+      <View style={styles.bar}>
+        <View style={[styles.barFill, { width: `${p * 100}%`, backgroundColor: color }]} />
+      </View>
+      <Text style={styles.macroValue}>
+        {Math.round(value)} / {goal} g
       </Text>
     </View>
   );
 }
 
+function Quick({ icon: I, label, onPress }: { icon: Icon; label: string; onPress: () => void }) {
+  return (
+    <Pressable style={({ pressed }) => [styles.quickTile, pressed && { opacity: 0.85 }]} onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
+      <I size={24} color={colors.accent} />
+      <Text style={styles.quickLabel} numberOfLines={1}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function WaterTile({ date }: { date: string }) {
+  const { t } = useT();
+  const water = useStore((s) => s.water);
+  const goal = useStore((s) => s.goals.waterMl);
+  const addWater = useStore((s) => s.addWater);
+  const deleteWater = useStore((s) => s.deleteWater);
+  const entries = water.filter((w) => w.date === date);
+  const total = entries.reduce((n, w) => n + w.ml, 0);
+  const last = entries[entries.length - 1];
+  const segments = Math.max(1, Math.round(goal / GLASS_ML));
+  const filled = Math.min(segments, Math.floor(total / GLASS_ML));
+  const litres = (ml: number) => formatNumber(ml / 1000, ml % 1000 === 0 ? 0 : ml % 100 === 0 ? 1 : 2);
+
+  return (
+    <Card style={styles.tile}>
+      <View style={styles.tileHead}>
+        <DropIcon size={18} color={WATER} weight="fill" />
+        <Text style={styles.tileTitle}>{t('food.waterTitle')}</Text>
+      </View>
+      <Text style={styles.tileValue}>
+        {litres(total)} <Text style={styles.tileUnit}>/ {litres(goal)} l</Text>
+      </Text>
+      <View style={styles.segments}>
+        {Array.from({ length: Math.min(segments, 12) }, (_, i) => (
+          <View key={i} style={[styles.segment, i < Math.round((filled / segments) * Math.min(segments, 12)) && { backgroundColor: WATER }]} />
+        ))}
+      </View>
+      <View style={styles.waterBtns}>
+        <Pressable
+          style={({ pressed }) => [styles.waterBtn, pressed && { opacity: 0.8 }, !last && { opacity: 0.4 }]}
+          disabled={!last}
+          onPress={() => last && deleteWater(last.id)}
+          accessibilityRole="button"
+          accessibilityLabel={t('food.waterRemove')}
+        >
+          <MinusIcon size={18} color={colors.textPrimary} weight="bold" />
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.waterBtn, styles.waterBtnAdd, pressed && { opacity: 0.85 }]}
+          onPress={() => addWater(GLASS_ML, date)}
+          accessibilityRole="button"
+          accessibilityLabel={t('food.waterAdd')}
+        >
+          <PlusIcon size={18} color={colors.textOnAccent} weight="bold" />
+        </Pressable>
+      </View>
+    </Card>
+  );
+}
+
+function SupplementsTile({ date }: { date: string }) {
+  const { t } = useT();
+  const supplements = useStore((s) => s.supplements).filter((s) => !s.archived);
+  const logs = useStore((s) => s.supplementLogs);
+  const take = useStore((s) => s.takeSupplement);
+  const undo = useStore((s) => s.deleteSupplementLog);
+  const total = supplements.reduce((n, s) => n + dosesPerDay(s), 0);
+  const done = supplements.reduce((n, s) => n + Math.min(dosesPerDay(s), takenOn(logs, s.id, date).length), 0);
+  const shown = supplements.slice(0, 3);
+
+  return (
+    <Card style={styles.tile}>
+      <Pressable style={styles.tileHead} onPress={() => router.push('/supplements')} accessibilityRole="button" hitSlop={6}>
+        <PillIcon size={18} color={colors.success} weight="fill" />
+        <Text style={styles.tileTitle} numberOfLines={1}>
+          {t('supp.title')}
+        </Text>
+      </Pressable>
+      {supplements.length === 0 ? (
+        <Pressable style={styles.suppEmpty} onPress={() => router.push('/supplements')} accessibilityRole="button">
+          <View style={styles.suppAdd}>
+            <PlusIcon size={16} color={colors.accent} weight="bold" />
+          </View>
+          <Text style={styles.suppEmptyText}>{t('food.suppAdd')}</Text>
+        </Pressable>
+      ) : (
+        <>
+          <Text style={styles.tileValue}>
+            {done} <Text style={styles.tileUnit}>/ {total}</Text>
+          </Text>
+          {shown.map((s) => {
+            const taken = takenOn(logs, s.id, date);
+            const complete = taken.length >= dosesPerDay(s);
+            const last = taken[taken.length - 1];
+            return (
+              <Pressable
+                key={s.id}
+                style={styles.suppRow}
+                onPress={() => (complete && last ? undo(last.id) : take(s.id, date))}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: complete }}
+                accessibilityLabel={s.name}
+                hitSlop={4}
+              >
+                <View style={[styles.check, complete && styles.checkOn]}>{complete && <CheckIcon size={14} color={colors.textPrimary} weight="bold" />}</View>
+                <Text style={styles.suppName} numberOfLines={1}>
+                  {s.name}
+                </Text>
+                {!complete && s.times[taken.length] ? <Text style={styles.suppTime}>{s.times[taken.length]}</Text> : null}
+              </Pressable>
+            );
+          })}
+          {supplements.length > shown.length && (
+            <Pressable onPress={() => router.push('/supplements')} accessibilityRole="button">
+              <Text style={styles.suppMore}>+{supplements.length - shown.length}</Text>
+            </Pressable>
+          )}
+        </>
+      )}
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
-  dayNav: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginTop: space.xl },
-  dayLabel: { ...type.navTitle, color: colors.textPrimary, flex: 1, textAlign: 'center', textTransform: 'capitalize' },
-  week: { flexDirection: 'row', justifyContent: 'space-between', marginTop: space.lg },
-  weekDay: { flex: 1, alignItems: 'center', gap: space.xs },
-  weekLabel: { ...type.caption, color: colors.textSecondary },
-  weekInner: { alignItems: 'center', justifyContent: 'center' },
-  weekInnerSel: { backgroundColor: colors.accent },
-  weekDate: { fontFamily: fonts.semibold, fontSize: 14, color: colors.textPrimary },
-  summary: { marginTop: space.xl, gap: space.lg },
-  kcalRow: { flexDirection: 'row', alignItems: 'center', gap: space.xl },
-  ringBig: { fontFamily: fonts.bold, fontSize: 26, color: colors.textPrimary, lineHeight: 28 },
-  ringSub: { fontFamily: fonts.medium, fontSize: 12, color: colors.textSecondary },
-  kcalStats: { flex: 1, gap: space.sm },
-  statLabel: { ...type.caption, color: colors.textSecondary },
-  statValue: { fontFamily: fonts.bold, fontSize: 22, color: colors.textPrimary },
-  statUnit: { fontFamily: fonts.medium, fontSize: 13, color: colors.textSecondary },
-  goal: { ...type.caption, color: colors.textSecondary },
-  meal: { marginTop: space.xxl },
-  mealCard: { marginTop: space.md, paddingVertical: space.xs },
-  item: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
-  itemName: { ...type.itemTitle, color: colors.textPrimary },
-  itemMeta: { ...type.caption, color: colors.textSecondary, marginTop: 2 },
-  itemKcal: { fontFamily: fonts.semibold, fontSize: 16, color: colors.textPrimary, fontVariant: ['tabular-nums'] },
-  addRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
-  addIcon: { width: 26, height: 26, borderRadius: radius.pill, backgroundColor: colors.control, alignItems: 'center', justifyContent: 'center' },
-  addText: { ...type.body, color: colors.textSecondary },
+  todayPill: { alignSelf: 'flex-start', marginTop: space.md, paddingHorizontal: space.md, paddingVertical: space.xs, borderRadius: radius.pill, backgroundColor: colors.control },
+  todayPillText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.accent },
+
+  hero: { marginTop: space.xl, paddingTop: space.xxl },
+  bigNum: { fontFamily: fonts.bold, fontSize: 44, lineHeight: 46, color: colors.textPrimary, fontVariant: ['tabular-nums'] },
+  bigSub: { ...type.caption, color: colors.textSecondary },
+  sides: { flexDirection: 'row', justifyContent: 'space-between', marginTop: space.md },
+  sideValue: { fontFamily: fonts.bold, fontSize: 18, color: colors.textPrimary, fontVariant: ['tabular-nums'] },
+  sideLabel: { ...type.caption, color: colors.textSecondary },
+  macros: { flexDirection: 'row', gap: space.md, marginTop: space.xl, paddingTop: space.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.hairline },
+  macroHead: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+  macroLabel: { fontFamily: fonts.semibold, fontSize: 14, color: colors.textPrimary },
+  bar: { height: 6, borderRadius: 3, backgroundColor: colors.control, marginTop: space.sm, marginBottom: space.xs, overflow: 'hidden' },
+  barFill: { height: '100%', borderRadius: 3 },
+  macroValue: { ...type.caption, color: colors.textSecondary, fontVariant: ['tabular-nums'] },
+
+  quick: { flexDirection: 'row', gap: space.sm, marginTop: space.lg },
+  quickTile: { flex: 1, alignItems: 'center', gap: space.sm, paddingVertical: space.md, borderRadius: radius.lg, backgroundColor: colors.surface },
+  quickLabel: { fontFamily: fonts.semibold, fontSize: 13, color: colors.textPrimary },
+
+  sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: space.xxl },
+  sectionTitle: { fontFamily: fonts.bold, fontSize: 22, color: colors.textPrimary },
+  sectionAside: { ...type.body, color: colors.textSecondary, fontVariant: ['tabular-nums'] },
+  mealsCard: { marginTop: space.md, paddingVertical: space.xxs },
+  meal: { paddingVertical: space.md },
+  mealBorder: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.hairline },
+  mealRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  mealIcon: { width: 42, height: 42, borderRadius: radius.md, backgroundColor: colors.control, alignItems: 'center', justifyContent: 'center' },
+  mealIconDone: { backgroundColor: 'rgba(210,254,8,0.12)' },
+  mealTitle: { fontFamily: fonts.semibold, fontSize: 17, color: colors.textPrimary },
+  mealMeta: { ...type.caption, color: colors.textSecondary, marginTop: 2 },
+  plus: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
+  plusGhost: { backgroundColor: colors.control },
+  item: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginTop: space.sm, marginLeft: 54, paddingVertical: space.sm, paddingHorizontal: space.md, borderRadius: radius.sm, backgroundColor: colors.surfaceRaised },
+  itemName: { fontFamily: fonts.semibold, fontSize: 15, color: colors.textPrimary },
+  itemKcal: { fontFamily: fonts.semibold, fontSize: 15, color: colors.textPrimary, fontVariant: ['tabular-nums'] },
+  chips: { flexDirection: 'row', gap: space.sm, marginTop: 2 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  chipText: { fontFamily: fonts.medium, fontSize: 12, color: colors.textSecondary },
+  dot: { width: 6, height: 6, borderRadius: 4 },
+
+  pair: { flexDirection: 'row', gap: space.sm, marginTop: space.xxl },
+  tile: { flex: 1, minWidth: 0, gap: space.sm },
+  tileHead: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+  tileTitle: { fontFamily: fonts.semibold, fontSize: 14, color: colors.textSecondary, flexShrink: 1 },
+  tileValue: { fontFamily: fonts.bold, fontSize: 24, color: colors.textPrimary, fontVariant: ['tabular-nums'] },
+  tileUnit: { fontFamily: fonts.medium, fontSize: 13, color: colors.textSecondary },
+  segments: { flexDirection: 'row', gap: 3 },
+  segment: { flex: 1, height: 20, borderRadius: 5, backgroundColor: colors.control },
+  waterBtns: { flexDirection: 'row', gap: space.xs, marginTop: space.xxs },
+  waterBtn: { flex: 1, height: 36, borderRadius: radius.sm, backgroundColor: colors.control, alignItems: 'center', justifyContent: 'center' },
+  waterBtnAdd: { backgroundColor: colors.accent },
+  suppEmpty: { flex: 1, justifyContent: 'center', gap: space.sm, paddingVertical: space.sm },
+  suppAdd: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.control, alignItems: 'center', justifyContent: 'center' },
+  suppEmptyText: { ...type.caption, color: colors.textSecondary },
+  suppRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  check: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: colors.cardStroke, alignItems: 'center', justifyContent: 'center' },
+  checkOn: { backgroundColor: colors.success, borderColor: colors.success },
+  suppName: { fontFamily: fonts.medium, fontSize: 14, color: colors.textPrimary, flex: 1 },
+  suppTime: { ...type.caption, color: colors.textSecondary },
+  suppMore: { ...type.caption, color: colors.accent },
 });

@@ -61,3 +61,6 @@ export { DotsSixVerticalIcon } from 'phosphor-react-native/src/icons/DotsSixVert
 export { CalendarBlankIcon } from 'phosphor-react-native/src/icons/CalendarBlank';
 export { ListChecksIcon } from 'phosphor-react-native/src/icons/ListChecks';
 export { StackIcon } from 'phosphor-react-native/src/icons/Stack';
+export { CoffeeIcon } from 'phosphor-react-native/src/icons/Coffee';
+export { BowlFoodIcon } from 'phosphor-react-native/src/icons/BowlFood';
+export { CookieIcon } from 'phosphor-react-native/src/icons/Cookie';
