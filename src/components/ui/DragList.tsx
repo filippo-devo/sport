@@ -1,12 +1,14 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Animated, PanResponder, Platform, StyleSheet, View } from 'react-native';
+import { Animated, PanResponder, Platform, StyleSheet, View, type HostInstance } from 'react-native';
 
 import { useStore } from '../../store';
 import { colors } from '../../theme/tokens';
 
 const HOLD_MS = 280;
 const SLOP = 8;
+/** Width of the drag handle at the row's left edge. */
+const HANDLE = 52;
 
 type Props<T> = {
   items: T[];
@@ -90,6 +92,9 @@ function Row({ index, count, rowHeight, shift, animate, lifted, onLift, onHover,
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const liftedRef = useRef(false);
   const target = useRef(index);
+  const view = useRef<HostInstance>(null);
+  const left = useRef(0);
+  const onHandle = (pageX: number) => pageX - left.current <= HANDLE;
 
   // Keep the latest props for the responder, which is created once.
   const latest = useRef({ index, count, rowHeight, onLift, onHover, onDrop, haptics });
@@ -122,14 +127,18 @@ function Row({ index, count, rowHeight, shift, animate, lifted, onLift, onHover,
       onMoveShouldSetPanResponder: () => liftedRef.current,
       // Before the row is lifted, let the scroll view take the gesture.
       onPanResponderTerminationRequest: () => !liftedRef.current,
-      onShouldBlockNativeResponder: () => false,
-      onPanResponderGrant: () => {
+      // A touch on the handle (left edge) owns the gesture outright, so neither the scroll view
+      // nor a native sheet gesture can take it; elsewhere the scroll view keeps working until the row lifts.
+      onShouldBlockNativeResponder: (e) => onHandle(e.nativeEvent.pageX),
+      onPanResponderGrant: (e) => {
         target.current = latest.current.index;
-        timer.current = setTimeout(() => {
+        const lift = () => {
           liftedRef.current = true;
           latest.current.onLift();
           if (latest.current.haptics && Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-        }, HOLD_MS);
+        };
+        if (onHandle(e.nativeEvent.pageX)) lift();
+        else timer.current = setTimeout(lift, HOLD_MS);
       },
       onPanResponderMove: (_, g) => {
         if (!liftedRef.current) {
@@ -155,6 +164,8 @@ function Row({ index, count, rowHeight, shift, animate, lifted, onLift, onHover,
 
   return (
     <Animated.View
+      ref={view}
+      onLayout={() => view.current?.measureInWindow((x) => (left.current = x))}
       {...responder.panHandlers}
       style={[
         { height: rowHeight, transform: [{ translateY: Animated.add(dy, offset) }, { scale: lifted ? 1.03 : 1 }] },
