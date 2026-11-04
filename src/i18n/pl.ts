@@ -658,4 +658,8 @@ export const pl: Dict = {
   'todayEdit.moveDown': "Przesuń niżej: {name}",
   'todayEdit.reset': "Przywróć domyślne",
   'today.target': "Cel {w}",
+  'todayEdit.dragHint': "Przytrzymaj wiersz i przeciągnij, żeby zmienić kolejność.",
+  'todayEdit.resetTitle': "Przywrócić domyślny układ?",
+  'todayEdit.resetBody': "Widżety, kolejność kart i częstotliwość zdjęć wrócą do ustawień domyślnych.",
+  'todayEdit.resetConfirm': "Przywróć",
 };

@@ -1,10 +1,13 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
-import { ArrowDownIcon, ArrowUpIcon } from '../components/icons';
-import { Card, Divider, Segmented } from '../components/ui/controls';
+import { DotsSixVerticalIcon } from '../components/icons';
+import { Card, Segmented } from '../components/ui/controls';
+import { DragList } from '../components/ui/DragList';
 import { NavBar } from '../components/ui/headers';
 import { Screen } from '../components/ui/layout';
+import { ConfirmSheet } from '../components/ui/sheets';
 import type { TodayCard, TodayLayout, TodayWidget } from '../data/types';
 import { useT, type TKey } from '../i18n';
 import { MAX_WIDGETS, normalizeLayout } from '../lib/today';
@@ -30,13 +33,6 @@ const CARD_LABEL: Record<TodayCard, TKey> = {
   quick: 'today.quick',
 };
 
-const move = <T,>(list: T[], i: number, d: number) => {
-  const j = i + d;
-  if (j < 0 || j >= list.length) return list;
-  const out = [...list];
-  [out[i], out[j]] = [out[j], out[i]];
-  return out;
-};
 
 /** Edit Today (BitePal "Home layout" / WHOOP "Customize dashboard"): pick widgets, show, hide and order cards. */
 export default function TodayEditScreen() {
@@ -45,14 +41,17 @@ export default function TodayEditScreen() {
   const setLayout = useStore((s) => s.setTodayLayout);
   const every = useStore((s) => s.settings.photoEveryDays);
   const setSettings = useStore((s) => s.setSettings);
+  const [dragging, setDragging] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const save = (patch: Partial<TodayLayout>) => setLayout({ ...layout, ...patch });
 
-  // Chosen widgets first, in their order, then the rest.
-  const widgetRows = [...layout.widgets.map((id) => WIDGETS.find((w) => w.id === id)!), ...WIDGETS.filter((w) => !layout.widgets.includes(w.id))];
+  const chosen = layout.widgets.map((id) => WIDGETS.find((w) => w.id === id)!);
+  const rest = WIDGETS.filter((w) => !layout.widgets.includes(w.id));
   const full = layout.widgets.length >= MAX_WIDGETS;
 
   return (
     <Screen
+      scrollProps={{ scrollEnabled: !dragging }}
       top={
         <NavBar
           title={t('today.edit')}
@@ -68,40 +67,48 @@ export default function TodayEditScreen() {
         {t('todayEdit.widgets').toUpperCase()} <Text style={styles.hint}>· {t('todayEdit.widgetsHint')}</Text>
       </Text>
       <Card style={styles.list}>
-        {widgetRows.map((w, i) => {
-          const on = layout.widgets.includes(w.id);
-          const idx = layout.widgets.indexOf(w.id);
-          return (
-            <View key={w.id}>
-              {i > 0 && <Divider />}
-              <Row
-                label={t(w.label)}
-                on={on}
-                disabled={!on && full}
-                onToggle={(v) => save({ widgets: v ? [...layout.widgets, w.id] : layout.widgets.filter((x) => x !== w.id) })}
-                onUp={on && idx > 0 ? () => save({ widgets: move(layout.widgets, idx, -1) }) : undefined}
-                onDown={on && idx < layout.widgets.length - 1 ? () => save({ widgets: move(layout.widgets, idx, 1) }) : undefined}
-              />
-            </View>
-          );
-        })}
+        <DragList
+          items={chosen}
+          keyOf={(w) => w.id}
+          rowHeight={ROW}
+          onDragChange={setDragging}
+          onReorder={(next) => save({ widgets: next.map((w) => w.id) })}
+          renderRow={(w) => (
+            <Row label={t(w.label)} on draggable first={w.id === chosen[0]?.id} onToggle={() => save({ widgets: layout.widgets.filter((x) => x !== w.id) })} />
+          )}
+        />
+        {rest.map((w, i) => (
+          <Row
+            key={w.id}
+            label={t(w.label)}
+            on={false}
+            first={chosen.length === 0 && i === 0}
+            disabled={full}
+            onToggle={() => save({ widgets: [...layout.widgets, w.id] })}
+          />
+        ))}
       </Card>
 
       <Text style={styles.group}>{t('todayEdit.cards').toUpperCase()}</Text>
       <Card style={styles.list}>
-        {layout.cards.map((c, i) => (
-          <View key={c.id}>
-            {i > 0 && <Divider />}
+        <DragList
+          items={layout.cards}
+          keyOf={(c) => c.id}
+          rowHeight={ROW}
+          onDragChange={setDragging}
+          onReorder={(cards) => save({ cards })}
+          renderRow={(c) => (
             <Row
               label={t(CARD_LABEL[c.id])}
               on={c.on}
+              draggable
+              first={c.id === layout.cards[0].id}
               onToggle={(v) => save({ cards: layout.cards.map((x) => (x.id === c.id ? { ...x, on: v } : x)) })}
-              onUp={i > 0 ? () => save({ cards: move(layout.cards, i, -1) }) : undefined}
-              onDown={i < layout.cards.length - 1 ? () => save({ cards: move(layout.cards, i, 1) }) : undefined}
             />
-          </View>
-        ))}
+          )}
+        />
       </Card>
+      <Text style={styles.footnote}>{t('todayEdit.dragHint')}</Text>
 
       <Text style={styles.group}>{t('photo.every').toUpperCase()}</Text>
       <Segmented
@@ -114,22 +121,38 @@ export default function TodayEditScreen() {
         ]}
       />
 
-      <Pressable onPress={() => setLayout(DEFAULT_TODAY_LAYOUT)} style={styles.reset} accessibilityRole="button">
+      <Pressable onPress={() => setConfirmReset(true)} style={styles.reset} accessibilityRole="button">
         <Text style={styles.resetText}>{t('todayEdit.reset')}</Text>
       </Pressable>
+
+      <ConfirmSheet
+        visible={confirmReset}
+        title={t('todayEdit.resetTitle')}
+        body={t('todayEdit.resetBody')}
+        confirmLabel={t('todayEdit.resetConfirm')}
+        destructive
+        onCancel={() => setConfirmReset(false)}
+        onConfirm={() => {
+          setLayout(DEFAULT_TODAY_LAYOUT);
+          setSettings({ photoEveryDays: 7 });
+          setConfirmReset(false);
+        }}
+      />
     </Screen>
   );
 }
 
-function Row({ label, on, disabled, onToggle, onUp, onDown }: { label: string; on: boolean; disabled?: boolean; onToggle: (v: boolean) => void; onUp?: () => void; onDown?: () => void }) {
-  const { t } = useT();
+const ROW = 56;
+
+function Row({ label, on, disabled, draggable, first, onToggle }: { label: string; on: boolean; disabled?: boolean; draggable?: boolean; first?: boolean; onToggle: (v: boolean) => void }) {
   return (
-    <View style={[styles.row, disabled && { opacity: 0.45 }]}>
+    <View style={[styles.row, !first && styles.rowBorder, disabled && { opacity: 0.45 }]}>
+      <View style={[styles.handle, !draggable && { opacity: 0 }]}>
+        <DotsSixVerticalIcon size={20} color={colors.textSecondary} weight="bold" />
+      </View>
       <Text style={styles.label} numberOfLines={1}>
         {label}
       </Text>
-      <Arrow icon="up" onPress={onUp} label={t('todayEdit.moveUp', { name: label })} />
-      <Arrow icon="down" onPress={onDown} label={t('todayEdit.moveDown', { name: label })} />
       <Switch
         value={on}
         disabled={disabled}
@@ -142,23 +165,16 @@ function Row({ label, on, disabled, onToggle, onUp, onDown }: { label: string; o
   );
 }
 
-function Arrow({ icon, onPress, label }: { icon: 'up' | 'down'; onPress?: () => void; label: string }) {
-  const Glyph = icon === 'up' ? ArrowUpIcon : ArrowDownIcon;
-  return (
-    <Pressable onPress={onPress} disabled={!onPress} hitSlop={6} style={[styles.arrow, !onPress && { opacity: 0.2 }]} accessibilityRole="button" accessibilityLabel={label}>
-      <Glyph size={16} color={colors.textSecondary} weight="bold" />
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   done: { fontFamily: fonts.semibold, fontSize: 17, color: colors.accent },
   group: { ...type.badge, color: colors.textSecondary, marginTop: space.xl, marginBottom: space.sm, marginLeft: space.xxs },
   hint: { ...type.caption, color: colors.textSecondary, letterSpacing: 0 },
-  list: { paddingVertical: 0 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.xs, minHeight: 56 },
+  list: { paddingVertical: 0, paddingHorizontal: 0, overflow: 'visible' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.sm, height: ROW, paddingHorizontal: space.lg },
+  rowBorder: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.hairline },
+  handle: { width: 22, alignItems: 'center' },
   label: { ...type.itemTitle, fontFamily: fonts.semibold, color: colors.textPrimary, flex: 1 },
-  arrow: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.control, alignItems: 'center', justifyContent: 'center' },
+  footnote: { ...type.caption, color: colors.textSecondary, marginTop: space.sm, marginLeft: space.xxs },
   reset: { alignSelf: 'center', marginTop: space.xxl, padding: space.sm },
   resetText: { ...type.body, color: colors.textSecondary },
 });

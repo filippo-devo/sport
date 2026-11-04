@@ -656,6 +656,10 @@ export const en = {
   'todayEdit.moveDown': "Move {name} down",
   'todayEdit.reset': "Restore default",
   'today.target': "Goal {w}",
+  'todayEdit.dragHint': "Press and hold a row, then drag it to change the order.",
+  'todayEdit.resetTitle': "Restore the default layout?",
+  'todayEdit.resetBody': "Widgets, card order and photo frequency go back to the defaults.",
+  'todayEdit.resetConfirm': "Restore",
 } as const;
 
 export type Dict = Record<keyof typeof en, string>;
