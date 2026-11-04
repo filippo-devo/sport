@@ -65,9 +65,9 @@ export const colors = {
   accentStroke: 'rgba(210,254,8,0.55)', // challenge card outline (volt over ink)
 
   tabBar: palette.tabBar,
-  tabBarGlass: 'rgba(30,40,50,0.42)', // Liquid Glass tint over the blur
+  tabBarGlass: 'rgba(18,26,34,0.30)', // Liquid Glass tint over the blur: light, so content shows through
   tabBarGlassSolid: 'rgba(22,30,38,0.72)', // Android: no live blur, so a denser tint
-  tabActive: 'rgba(255,255,255,0.12)', // selected tab capsule, lighter glass
+  tabActive: 'rgba(255,255,255,0.10)', // selected tab capsule, lighter glass
   tabLabel: palette.white,
 } as const;
 
@@ -116,7 +116,7 @@ export const layout = {
   gutter: 16, // 38 px @ 920-px render ≈ 16 pt
   maxContentWidth: 480, // keeps the phone layout intact on tablets / desktop web
   control: 44, // circular glass buttons (≈ 44 pt)
-  tabBarHeight: 68, // floating bar with large icons, inset ≈ 21 pt from screen edges
+  tabBarHeight: 64, // floating glass capsule, inset ≈ 20 pt from screen edges
   navBar: 56,
   tabBarInset: 20,
   ctaHeight: 52,

@@ -5,33 +5,37 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { useT, type TKey } from '../i18n';
-import { colors, layout, radius, type } from '../theme/tokens';
+import { colors, fonts, layout, radius } from '../theme/tokens';
 import { ActiveWorkoutBar } from './ActiveWorkoutBar';
-import { BarbellIcon, ChartLineUpIcon, ForkKnifeIcon, HouseSimpleIcon, UserIcon, type Icon } from './icons';
-import { BottomFade, useLayout } from './ui/layout';
+import { BarbellIcon, ChartLineUpIcon, ForkKnifeIcon, SunIcon, UserIcon, type Icon } from './icons';
+import { useLayout } from './ui/layout';
 
 // Route name → label and icon. Order follows the Tabs layout.
 const TABS: Record<string, { label: TKey; icon: Icon }> = {
-  index: { label: 'tabs.today', icon: HouseSimpleIcon },
+  index: { label: 'tabs.today', icon: SunIcon },
   train: { label: 'tabs.train', icon: BarbellIcon },
   progress: { label: 'tabs.progress', icon: ChartLineUpIcon },
   food: { label: 'tabs.food', icon: ForkKnifeIcon },
   profile: { label: 'tabs.profile', icon: UserIcon },
 };
 
+const ICON = 26;
+
 // iOS 26+ renders Apple's own Liquid Glass material; everywhere else the bar is
-// approximated with a blur, a translucent tint and a specular top edge.
+// approximated with a light blur, a thin tint and a hairline specular rim.
 const NATIVE_GLASS = Platform.OS === 'ios' && isLiquidGlassAvailable() && isGlassEffectAPIAvailable();
 
-/** Floating Liquid Glass tab bar (iOS 26 style): glass capsule, lighter capsule on the selected tab. */
+/**
+ * Floating Liquid Glass tab bar (iOS 26 style). No fade behind it: content scrolls
+ * under the glass and shows through, which is what makes it read as glass.
+ */
 export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
   const { t } = useT();
   const { tabBarBottom, frameWidth } = useLayout();
-  const width = Math.min(frameWidth - layout.tabBarInset * 2, 420);
+  const width = Math.min(frameWidth - layout.tabBarInset * 2, 400);
 
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      <BottomFade height={tabBarBottom + layout.tabBarHeight + 28} />
       <ActiveWorkoutBar bottom={tabBarBottom + layout.tabBarHeight + 10} width={width} />
       <View style={[styles.wrap, { bottom: tabBarBottom, width }]} accessibilityRole="tablist">
         <GlassBackground />
@@ -52,12 +56,14 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
                 if (!active) navigateToTab(route.key);
               }}
             >
-              <View style={[styles.capsule, active && styles.capsuleActive]}>
-                <Glyph size={30} color={active ? colors.accent : colors.tabLabel} weight={active ? 'fill' : 'regular'} />
-                <Text style={[styles.label, active && styles.labelActive]} numberOfLines={1}>
-                  {t(tab.label)}
-                </Text>
-              </View>
+              {({ pressed }) => (
+                <View style={[styles.capsule, active && styles.capsuleActive, pressed && !active && styles.capsulePressed]}>
+                  <Glyph size={ICON} color={active ? colors.accent : colors.tabLabel} weight={active ? 'fill' : 'regular'} />
+                  <Text style={[styles.label, active && styles.labelActive]} numberOfLines={1}>
+                    {t(tab.label)}
+                  </Text>
+                </View>
+              )}
             </Pressable>
           );
         })}
@@ -76,16 +82,15 @@ function GlassBackground() {
         // expo-blur on Android needs a BlurTargetView around the screen content; a denser tint stands in.
         <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.tabBarGlassSolid }]} />
       ) : (
-        <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={40} tint="systemChromeMaterialDark" style={StyleSheet.absoluteFill} />
       )}
       <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.tabBarGlass }]} />
-      {/* Specular sheen: light catches the top of the glass and fades out by mid-height. */}
+      {/* Faint sheen on the upper edge only. */}
       <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
         <Defs>
           <LinearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.16} />
-            <Stop offset="0.5" stopColor="#FFFFFF" stopOpacity={0.02} />
-            <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0.05} />
+            <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.08} />
+            <Stop offset="0.35" stopColor="#FFFFFF" stopOpacity={0} />
           </LinearGradient>
         </Defs>
         <Rect width="100%" height="100%" fill="url(#sheen)" />
@@ -104,21 +109,20 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     flexDirection: 'row',
     padding: 4,
-    ...(NATIVE_GLASS ? null : { boxShadow: '0 8px 24px rgba(0,0,0,0.35)' }),
+    ...(NATIVE_GLASS ? null : { boxShadow: '0 10px 30px rgba(0,0,0,0.30)' }),
   },
-  // Bright upper rim, dimmer lower rim: how Liquid Glass edges catch light.
+  // Hairline rim, a touch brighter on top where the light catches the glass.
   rim: {
     ...StyleSheet.absoluteFill,
     borderRadius: radius.pill,
-    borderWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.28)',
-    borderLeftColor: 'rgba(255,255,255,0.14)',
-    borderRightColor: 'rgba(255,255,255,0.14)',
-    borderBottomColor: 'rgba(255,255,255,0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.12)',
+    borderTopColor: 'rgba(255,255,255,0.24)',
   },
   item: { flex: 1 },
-  capsule: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, borderRadius: radius.pill },
+  capsule: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 1, borderRadius: radius.pill },
   capsuleActive: { backgroundColor: colors.tabActive },
-  label: { ...type.tab, color: colors.tabLabel },
-  labelActive: { color: colors.accent },
+  capsulePressed: { backgroundColor: 'rgba(255,255,255,0.05)' },
+  label: { fontFamily: fonts.medium, fontSize: 10, lineHeight: 13, color: colors.tabLabel, opacity: 0.85 },
+  labelActive: { fontFamily: fonts.semibold, color: colors.accent, opacity: 1 },
 });
