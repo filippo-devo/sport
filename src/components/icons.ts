@@ -52,3 +52,7 @@ export { UsersIcon } from 'phosphor-react-native/src/icons/Users';
 export { WarningIcon } from 'phosphor-react-native/src/icons/Warning';
 export { XIcon } from 'phosphor-react-native/src/icons/X';
 export { SunIcon } from 'phosphor-react-native/src/icons/Sun';
+export { InfoIcon } from 'phosphor-react-native/src/icons/Info';
+export { LockSimpleIcon } from 'phosphor-react-native/src/icons/LockSimple';
+export { MedalIcon } from 'phosphor-react-native/src/icons/Medal';
+export { RulerIcon } from 'phosphor-react-native/src/icons/Ruler';

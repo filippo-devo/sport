@@ -102,6 +102,11 @@ export type WeighIn = { date: string; kg: number };
 
 export type Photo = { id: string; date: string; uri: string };
 
+/** Body measurements: circumferences in cm, body fat in %. */
+export type MeasureKey = 'waist' | 'chest' | 'hips' | 'arm' | 'thigh' | 'bodyFat';
+
+export type Measurement = { date: string; key: MeasureKey; value: number };
+
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 export type Food = {
