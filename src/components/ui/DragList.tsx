@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, PanResponder, Platform, StyleSheet, View, type HostInstance } from 'react-native';
 
 import { useStore } from '../../store';
@@ -9,6 +9,8 @@ const HOLD_MS = 280;
 const SLOP = 8;
 /** Width of the drag handle at the row's left edge. */
 const HANDLE = 52;
+/** Width of the trailing control (switch) that must stay tappable. */
+const CONTROL = 76;
 
 type Props<T> = {
   items: T[];
@@ -89,12 +91,16 @@ function Row({ index, count, rowHeight, shift, animate, lifted, onLift, onHover,
   const haptics = useStore((s) => s.settings.haptics);
   const [dy] = useState(() => new Animated.Value(0));
   const [offset] = useState(() => new Animated.Value(0));
+  const [translateY] = useState(() => Animated.add(dy, offset));
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const liftedRef = useRef(false);
   const target = useRef(index);
   const view = useRef<HostInstance>(null);
   const left = useRef(0);
+  const width = useRef(0);
   const onHandle = (pageX: number) => pageX - left.current <= HANDLE;
+  // The switch sits at the right edge: touches there toggle it and never start a drag.
+  const onControl = (pageX: number) => width.current > 0 && pageX - left.current >= width.current - CONTROL;
 
   // Keep the latest props for the responder, which is created once.
   const latest = useRef({ index, count, rowHeight, onLift, onHover, onDrop, haptics });
@@ -103,10 +109,19 @@ function Row({ index, count, rowHeight, shift, animate, lifted, onLift, onHover,
   });
 
   useEffect(() => {
-    // While dragging, neighbours glide out of the way; after the drop the list re-renders in its new order, so snap.
-    if (animate) Animated.spring(offset, { toValue: shift, useNativeDriver: true, speed: 24, bounciness: 4 }).start();
-    else offset.setValue(0);
+    // While a row is lifted, neighbours glide out of the way.
+    if (animate) Animated.spring(offset, { toValue: shift, useNativeDriver: false, speed: 26, bounciness: 0 }).start();
   }, [shift, animate, offset]);
+
+  // After the drop the list re-renders in its new order: clear every offset before that frame is painted,
+  // so no row is drawn shifted twice (that showed up as gaps and jumping switches).
+  useLayoutEffect(() => {
+    if (animate) return;
+    offset.stopAnimation();
+    offset.setValue(0);
+    dy.stopAnimation();
+    dy.setValue(0);
+  }, [index, animate, offset, dy]);
 
   // The responder is created once; its callbacks read refs only when a touch event fires, never during render.
   // eslint-disable-next-line react-hooks/refs
@@ -117,13 +132,10 @@ function Row({ index, count, rowHeight, shift, animate, lifted, onLift, onHover,
       liftedRef.current = false;
       const { rowHeight: h } = latest.current;
       const to = target.current;
-      Animated.spring(dy, { toValue: (to - latest.current.index) * h, useNativeDriver: true, speed: 28, bounciness: 0 }).start(() => {
-        latest.current.onDrop(to);
-        dy.setValue(0);
-      });
+      Animated.timing(dy, { toValue: (to - latest.current.index) * h, duration: 120, useNativeDriver: false }).start(() => latest.current.onDrop(to));
     };
     return PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: (e) => !onControl(e.nativeEvent.pageX),
       onMoveShouldSetPanResponder: () => liftedRef.current,
       // Before the row is lifted, let the scroll view take the gesture.
       onPanResponderTerminationRequest: () => !liftedRef.current,
@@ -165,10 +177,13 @@ function Row({ index, count, rowHeight, shift, animate, lifted, onLift, onHover,
   return (
     <Animated.View
       ref={view}
-      onLayout={() => view.current?.measureInWindow((x) => (left.current = x))}
+      onLayout={(e) => {
+        width.current = e.nativeEvent.layout.width;
+        view.current?.measureInWindow((x) => (left.current = x));
+      }}
       {...responder.panHandlers}
       style={[
-        { height: rowHeight, transform: [{ translateY: Animated.add(dy, offset) }, { scale: lifted ? 1.03 : 1 }] },
+        { height: rowHeight, transform: [{ translateY }, { scale: lifted ? 1.02 : 1 }] },
         lifted && styles.lifted,
       ]}
     >
