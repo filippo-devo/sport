@@ -19,7 +19,7 @@ const TABS: Record<string, { label: TKey; icon: Icon }> = {
   profile: { label: 'tabs.profile', icon: UserIcon },
 };
 
-const ICON = 26;
+const ICON = 30;
 
 // iOS 26+ renders Apple's own Liquid Glass material; everywhere else the bar is
 // approximated with a light blur, a thin tint and a hairline specular rim.
@@ -58,7 +58,7 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
             >
               {({ pressed }) => (
                 <View style={[styles.capsule, active && styles.capsuleActive, pressed && !active && styles.capsulePressed]}>
-                  <Glyph size={ICON} color={active ? colors.accent : colors.tabLabel} weight={active ? 'fill' : 'regular'} />
+                  <Glyph size={ICON} color={colors.tabLabel} weight={active ? 'fill' : 'regular'} />
                   <Text style={[styles.label, active && styles.labelActive]} numberOfLines={1}>
                     {t(tab.label)}
                   </Text>
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     overflow: 'hidden',
     flexDirection: 'row',
-    padding: 4,
+    padding: 5,
     ...(NATIVE_GLASS ? null : { boxShadow: '0 10px 30px rgba(0,0,0,0.30)' }),
   },
   // Hairline rim, a touch brighter on top where the light catches the glass.
@@ -120,9 +120,9 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255,255,255,0.24)',
   },
   item: { flex: 1 },
-  capsule: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 1, borderRadius: radius.pill },
+  capsule: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, borderRadius: radius.pill },
   capsuleActive: { backgroundColor: colors.tabActive },
   capsulePressed: { backgroundColor: 'rgba(255,255,255,0.05)' },
-  label: { fontFamily: fonts.medium, fontSize: 10, lineHeight: 13, color: colors.tabLabel, opacity: 0.85 },
-  labelActive: { fontFamily: fonts.semibold, color: colors.accent, opacity: 1 },
+  label: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 16, color: colors.tabLabel },
+  labelActive: { fontFamily: fonts.bold },
 });
