@@ -100,7 +100,8 @@ export type ActiveWorkout = {
 
 export type WeighIn = { date: string; kg: number };
 
-export type Photo = { id: string; date: string; uri: string };
+export type PhotoPose = 'front' | 'side' | 'back';
+export type Photo = { id: string; date: string; uri: string; pose?: PhotoPose };
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
