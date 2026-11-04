@@ -11,15 +11,16 @@ import { BarbellIcon, ChartLineUpIcon, ForkKnifeIcon, SunIcon, UserIcon, type Ic
 import { useLayout } from './ui/layout';
 
 // Route name → label and icon. Order follows the Tabs layout.
-const TABS: Record<string, { label: TKey; icon: Icon }> = {
+// `fill` is the selected look; ChartLineUp's fill variant is a solid tile, so it uses `bold` instead.
+const TABS: Record<string, { label: TKey; icon: Icon; activeWeight?: 'fill' | 'bold' }> = {
   index: { label: 'tabs.today', icon: SunIcon },
   train: { label: 'tabs.train', icon: BarbellIcon },
   food: { label: 'tabs.food', icon: ForkKnifeIcon },
-  progress: { label: 'tabs.progress', icon: ChartLineUpIcon },
+  progress: { label: 'tabs.progress', icon: ChartLineUpIcon, activeWeight: 'bold' },
   profile: { label: 'tabs.profile', icon: UserIcon },
 };
 
-const ICON = 30;
+const ICON = 27;
 
 // iOS 26+ renders Apple's own Liquid Glass material; everywhere else the bar is
 // approximated with a light blur, a thin tint and a hairline specular rim.
@@ -58,7 +59,7 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
             >
               {({ pressed }) => (
                 <View style={[styles.capsule, active && styles.capsuleActive, pressed && !active && styles.capsulePressed]}>
-                  <Glyph size={ICON} color={colors.tabLabel} weight={active ? 'fill' : 'regular'} />
+                  <Glyph size={ICON} color={colors.tabLabel} weight={active ? (tab.activeWeight ?? 'fill') : 'regular'} />
                   <Text style={[styles.label, active && styles.labelActive]} numberOfLines={1}>
                     {t(tab.label)}
                   </Text>
@@ -123,6 +124,6 @@ const styles = StyleSheet.create({
   capsule: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, borderRadius: radius.pill },
   capsuleActive: { backgroundColor: colors.tabActive },
   capsulePressed: { backgroundColor: 'rgba(255,255,255,0.05)' },
-  label: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 16, color: colors.tabLabel },
+  label: { fontFamily: fonts.semibold, fontSize: 12, lineHeight: 15, color: colors.tabLabel },
   labelActive: { fontFamily: fonts.bold },
 });
