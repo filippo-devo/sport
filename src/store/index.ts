@@ -24,6 +24,9 @@ import type {
   Settings,
   Supplement,
   SupplementLog,
+  TodayLayout,
+  UnlockChallenge,
+  UnlockLog,
   GymVisit,
   WaterEntry,
   WeighIn,
@@ -52,6 +55,9 @@ type Data = {
   coachChat: CoachMessage[];
   /** Plans assigned by personal trainers (server id -> local plan id and version). */
   coachPlanLinks: Record<string, { localId: string; updatedAt: string }>;
+  todayLayout: TodayLayout;
+  unlock: UnlockChallenge;
+  unlockLogs: UnlockLog[];
 };
 
 type Actions = {
@@ -99,6 +105,11 @@ type Actions = {
   clearCoachChat: () => void;
   setCoachPlanLinks: (links: Data['coachPlanLinks']) => void;
 
+  setTodayLayout: (layout: TodayLayout) => void;
+  setUnlock: (patch: Partial<UnlockChallenge>) => void;
+  logUnlock: () => void;
+  deleteUnlockLog: (id: string) => void;
+
   resetAll: () => void;
 };
 
@@ -125,9 +136,16 @@ export const DEFAULT_REMINDERS: ReminderSettings = {
   supplements: { on: true },
 };
 
+export const DEFAULT_TODAY_LAYOUT: TodayLayout = {
+  widgets: ['kcal', 'workouts', 'steps'],
+  cards: (['workout', 'nutrition', 'water', 'supplements', 'unlock', 'photo', 'quick'] as const).map((id) => ({ id, on: true })),
+};
+
+export const DEFAULT_UNLOCK: UnlockChallenge = { on: false, exercise: 'pushups', reps: 20, times: ['07:00'], reminders: true };
+
 function initialData(): Data {
   return {
-    settings: { name: '', lang: deviceLang(), units: 'kg', restSec: 90, haptics: true },
+    settings: { name: '', lang: deviceLang(), units: 'kg', restSec: 90, haptics: true, photoEveryDays: 7 },
     goals: DEFAULT_GOALS,
     activeProgramId: PROGRAMS[0].id,
     sessions: [],
@@ -144,6 +162,9 @@ function initialData(): Data {
     gymVisits: [],
     coachChat: [],
     coachPlanLinks: {},
+    todayLayout: DEFAULT_TODAY_LAYOUT,
+    unlock: DEFAULT_UNLOCK,
+    unlockLogs: [],
   };
 }
 
@@ -366,6 +387,13 @@ export const useStore = create<AppState>()(
         updateCoachMessage: (id, patch) => set({ coachChat: get().coachChat.map((m) => (m.id === id ? { ...m, ...patch } : m)) }),
         clearCoachChat: () => set({ coachChat: [] }),
         setCoachPlanLinks: (coachPlanLinks) => set({ coachPlanLinks }),
+        setTodayLayout: (todayLayout) => set({ todayLayout }),
+        setUnlock: (patch) => set({ unlock: { ...get().unlock, ...patch } }),
+        logUnlock: () => {
+          const { exercise, reps } = get().unlock;
+          set({ unlockLogs: [...get().unlockLogs, { id: uid(), date: dayKey(), time: hhmm(), exercise, reps }].slice(-500) });
+        },
+        deleteUnlockLog: (id) => set({ unlockLogs: get().unlockLogs.filter((l) => l.id !== id) }),
 
         resetAll: () => {
           const { lang, units } = get().settings;
@@ -398,6 +426,7 @@ export const useStore = create<AppState>()(
           goals: { ...current.goals, ...p.goals },
           settings: { ...current.settings, ...p.settings },
           reminders: { ...current.reminders, ...p.reminders },
+          unlock: { ...current.unlock, ...p.unlock },
         };
       },
       partialize: (s) => {
@@ -419,6 +448,9 @@ export const useStore = create<AppState>()(
           gymVisits: s.gymVisits,
           coachChat: s.coachChat,
           coachPlanLinks: s.coachPlanLinks,
+          todayLayout: s.todayLayout,
+          unlock: s.unlock,
+          unlockLogs: s.unlockLogs,
         };
         return data;
       },

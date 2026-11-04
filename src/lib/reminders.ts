@@ -54,7 +54,7 @@ type Planned = { title: string; body: string; url: string; trigger: Notification
 
 /** Pure: what should be scheduled for this state (exported for testing). */
 export function plannedReminders(s: AppState, now = new Date()): Planned[] {
-  const { t, L } = makeT(s.settings.lang);
+  const { t, tn, L } = makeT(s.settings.lang);
   const out: Planned[] = [];
   const r = s.reminders;
   const program = getProgram(s.activeProgramId, s.programs);
@@ -104,11 +104,26 @@ export function plannedReminders(s: AppState, now = new Date()): Planned[] {
       }
     }
   }
+  const u = s.unlock;
+  if (u?.on && u.reminders) {
+    const task = tn(u.exercise === 'squats' ? 'unlock.squats' : 'unlock.pushups', u.reps);
+    for (const time of u.times) {
+      const { hour, minute } = parseTime(time);
+      out.push({
+        title: t('notify.unlockTitle'),
+        body: t('notify.unlockBody', { task }),
+        url: '/unlock',
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, channelId: CHANNEL },
+      });
+    }
+  }
+
   // iOS keeps at most 64 pending notifications.
   return out.slice(0, 60);
 }
 
 export const anyReminderOn = (s: AppState) =>
+  (s.unlock?.on && s.unlock.reminders) ||
   s.reminders.workout.on || s.reminders.missed.on || s.reminders.water.on || (s.reminders.supplements.on && s.supplements.some((x) => x.reminders && !x.archived));
 
 let syncing: Promise<void> = Promise.resolve();
@@ -149,6 +164,7 @@ export function useReminderSync() {
         s.programs === prev.programs &&
         s.routines === prev.routines &&
         s.supplements === prev.supplements &&
+        s.unlock === prev.unlock &&
         s.goals.waterMl === prev.goals.waterMl &&
         s.settings.lang === prev.settings.lang
       )

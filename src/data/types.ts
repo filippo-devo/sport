@@ -204,4 +204,21 @@ export type Settings = {
   units: Units;
   restSec: number;
   haptics: boolean;
+  /** How often the Today screen asks for a progress photo, in days. */
+  photoEveryDays: number;
 };
+
+/** Small stat tiles at the top of Today (the user picks up to three). */
+export type TodayWidget = 'kcal' | 'workouts' | 'steps' | 'water' | 'protein' | 'weight';
+/** Cards on Today, in the user's order; each can be hidden. */
+export type TodayCard = 'workout' | 'nutrition' | 'water' | 'supplements' | 'unlock' | 'photo' | 'quick';
+export type TodayLayout = { widgets: TodayWidget[]; cards: { id: TodayCard; on: boolean }[] };
+
+/**
+ * "Unlock your phone": a set of push-ups or squats due at chosen times of day.
+ * Blocking other apps needs Apple's Screen Time API in a native build; until then the
+ * app keeps the schedule, reminds and records each completed set.
+ */
+export type UnlockExercise = 'pushups' | 'squats';
+export type UnlockChallenge = { on: boolean; exercise: UnlockExercise; reps: number; times: string[]; reminders: boolean };
+export type UnlockLog = { id: string; date: string; time: string; exercise: UnlockExercise; reps: number };
