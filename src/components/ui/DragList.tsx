@@ -183,7 +183,7 @@ function Row({ index, count, rowHeight, shift, animate, lifted, onLift, onHover,
       }}
       {...responder.panHandlers}
       style={[
-        { height: rowHeight, transform: [{ translateY }, { scale: lifted ? 1.02 : 1 }] },
+        { height: rowHeight, justifyContent: 'center', transform: [{ translateY }] },
         lifted && styles.lifted,
       ]}
     >

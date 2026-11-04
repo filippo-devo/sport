@@ -153,14 +153,17 @@ function Row({ label, on, disabled, draggable, first, onToggle }: { label: strin
       <Text style={styles.label} numberOfLines={1}>
         {label}
       </Text>
-      <Switch
-        value={on}
-        disabled={disabled}
-        onValueChange={onToggle}
-        trackColor={{ true: colors.accent, false: colors.track }}
-        thumbColor={on ? colors.textOnAccent : colors.textPrimary}
-        accessibilityLabel={label}
-      />
+      {/* Fixed box so the switch stays vertically centred in the row, also while the row is dragged. */}
+      <View style={styles.control}>
+        <Switch
+          value={on}
+          disabled={disabled}
+          onValueChange={onToggle}
+          trackColor={{ true: colors.accent, false: colors.track }}
+          thumbColor={on ? colors.textOnAccent : colors.textPrimary}
+          accessibilityLabel={label}
+        />
+      </View>
     </View>
   );
 }
@@ -173,6 +176,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm, height: ROW, paddingHorizontal: space.lg },
   rowBorder: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.hairline },
   handle: { width: 22, alignItems: 'center' },
+  control: { width: 64, height: ROW, alignItems: 'flex-end', justifyContent: 'center' },
   label: { ...type.itemTitle, fontFamily: fonts.semibold, color: colors.textPrimary, flex: 1 },
   footnote: { ...type.caption, color: colors.textSecondary, marginTop: space.sm, marginLeft: space.xxs },
   reset: { alignSelf: 'center', marginTop: space.xxl, padding: space.sm },
