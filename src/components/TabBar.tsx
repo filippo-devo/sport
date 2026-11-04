@@ -14,8 +14,8 @@ import { useLayout } from './ui/layout';
 const TABS: Record<string, { label: TKey; icon: Icon }> = {
   index: { label: 'tabs.today', icon: SunIcon },
   train: { label: 'tabs.train', icon: BarbellIcon },
-  progress: { label: 'tabs.progress', icon: ChartLineUpIcon },
   food: { label: 'tabs.food', icon: ForkKnifeIcon },
+  progress: { label: 'tabs.progress', icon: ChartLineUpIcon },
   profile: { label: 'tabs.profile', icon: UserIcon },
 };
 
