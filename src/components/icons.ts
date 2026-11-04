@@ -58,3 +58,6 @@ export { LockSimpleOpenIcon } from 'phosphor-react-native/src/icons/LockSimpleOp
 export { ImageSquareIcon } from 'phosphor-react-native/src/icons/ImageSquare';
 export { PersonSimpleIcon } from 'phosphor-react-native/src/icons/PersonSimple';
 export { DotsSixVerticalIcon } from 'phosphor-react-native/src/icons/DotsSixVertical';
+export { CalendarBlankIcon } from 'phosphor-react-native/src/icons/CalendarBlank';
+export { ListChecksIcon } from 'phosphor-react-native/src/icons/ListChecks';
+export { StackIcon } from 'phosphor-react-native/src/icons/Stack';

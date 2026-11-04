@@ -660,6 +660,19 @@ export const en = {
   'todayEdit.resetTitle': "Restore the default layout?",
   'todayEdit.resetBody': "Widgets, card order and photo frequency go back to the defaults.",
   'todayEdit.resetConfirm': "Restore",
+  'train.showMore': 'Show {n} more',
+  'train.showLess': 'Show less',
+  'train.restOfWeek': 'Rest of the week',
+  'train.quickStart': 'Quick start',
+  'train.lastWorkout': 'Last workout',
+  'train.history': 'History',
+  'train.editWorkout': 'Edit workout',
+  'train.viewWorkout': 'View workout',
+  'train.coachShort': 'Tips and plans',
+  'train.weekDone': '{done} of {total} workouts done this week',
+  'train.noMoreThisWeek': 'Nothing else planned this week',
+  'train.exercises': 'Exercises',
+  'train.recovery': 'Recovery',
 } as const;
 
 export type Dict = Record<keyof typeof en, string>;
