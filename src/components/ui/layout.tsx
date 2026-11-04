@@ -11,7 +11,8 @@ export function useLayout() {
   const { width, height } = useWindowDimensions();
   const frameWidth = Math.min(width, layout.maxContentWidth);
   const gutter = frameWidth < 360 ? 14 : layout.gutter;
-  const tabBarBottom = Math.max(insets.bottom, 12);
+  // Sits partly inside the home-indicator area, like the iOS 26 floating tab bar.
+  const tabBarBottom = Math.max(insets.bottom - 14, 8);
   return {
     insets,
     frameWidth,
