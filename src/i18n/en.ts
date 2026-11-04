@@ -717,6 +717,9 @@ export const en = {
   'food.waterAdd': "Add a glass (250 ml)",
   'food.goalLabel': "Goal",
   'food.suppAdd': "Add supplements",
+  'profile.volumeShort': "Volume",
+  'profile.accountSection': "Account",
+  'profile.gymThisMonth': "{n} this month",
 } as const;
 
 export type Dict = Record<keyof typeof en, string>;

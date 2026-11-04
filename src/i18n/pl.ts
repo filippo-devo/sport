@@ -719,4 +719,7 @@ export const pl: Dict = {
   'food.waterAdd': "Dodaj szklankę (250 ml)",
   'food.goalLabel': "Cel",
   'food.suppAdd': "Dodaj suplementy",
+  'profile.volumeShort': "Objętość",
+  'profile.accountSection': "Konto",
+  'profile.gymThisMonth': "W tym miesiącu: {n}",
 };

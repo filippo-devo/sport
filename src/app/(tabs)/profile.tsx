@@ -1,42 +1,56 @@
-import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { CaretRightIcon, TrashIcon, UserIcon } from '../../components/icons';
-import { Button, Card, Divider, Segmented, SectionTitle } from '../../components/ui/controls';
+import {
+  BarbellIcon,
+  BellIcon,
+  CaretRightIcon,
+  FireIcon,
+  FootprintsIcon,
+  ForkKnifeIcon,
+  DropIcon,
+  GearSixIcon,
+  QrCodeIcon,
+  ScalesIcon,
+  StackIcon,
+  UserIcon,
+  UsersIcon,
+  type Icon,
+} from '../../components/icons';
+import { Card, Divider, IconButton, SectionTitle, pressedStyle } from '../../components/ui/controls';
 import { TabHeader } from '../../components/ui/headers';
 import { Screen } from '../../components/ui/layout';
-import { ConfirmSheet, NumberSheet } from '../../components/ui/sheets';
-import type { Goals, Lang, Units } from '../../data/types';
+import { NumberSheet } from '../../components/ui/sheets';
+import type { Goals } from '../../data/types';
 import { useT, type TKey } from '../../i18n';
-import { clock } from '../../lib/date';
 import { formatVolume, formatWeight, fromDisplayWeight, toDisplayWeight } from '../../lib/units';
 import { useStore } from '../../store';
 import { sessionVolume } from '../../store/derived';
-import { goalWeekStreak } from '../../store/stats';
-import { colors, fonts, space, type } from '../../theme/tokens';
+import { activeDays, dayStreak } from '../../store/stats';
+import { colors, fonts, radius, space, type } from '../../theme/tokens';
 
 type GoalKey = keyof Goals;
+type GoalRow = { key: GoalKey; label: TKey; unit: string; step: number; min: number; max: number };
 
-const GOAL_ROWS: { key: GoalKey; label: TKey; unit: string; step: number; min: number; max: number }[] = [
-  { key: 'kcal', label: 'profile.kcal', unit: 'kcal', step: 50, min: 1000, max: 6000 },
-  { key: 'protein', label: 'macro.protein', unit: 'g', step: 5, min: 20, max: 400 },
-  { key: 'carbs', label: 'macro.carbs', unit: 'g', step: 5, min: 20, max: 800 },
-  { key: 'fat', label: 'macro.fat', unit: 'g', step: 5, min: 20, max: 300 },
-  { key: 'targetWeight', label: 'profile.targetWeight', unit: '', step: 0.5, min: 30, max: 300 },
-  { key: 'workoutsPerWeek', label: 'profile.workoutsPerWeek', unit: '', step: 1, min: 1, max: 7 },
-  { key: 'workoutsPerMonth', label: 'profile.workoutsPerMonth', unit: '', step: 1, min: 1, max: 31 },
-  { key: 'steps', label: 'profile.steps', unit: '', step: 500, min: 1000, max: 40000 },
-  { key: 'waterMl', label: 'profile.waterGoal', unit: 'ml', step: 250, min: 500, max: 6000 },
-];
+const GOAL_ROWS: Record<GoalKey, GoalRow> = {
+  kcal: { key: 'kcal', label: 'profile.kcal', unit: 'kcal', step: 50, min: 1000, max: 6000 },
+  protein: { key: 'protein', label: 'macro.protein', unit: 'g', step: 5, min: 20, max: 400 },
+  carbs: { key: 'carbs', label: 'macro.carbs', unit: 'g', step: 5, min: 20, max: 800 },
+  fat: { key: 'fat', label: 'macro.fat', unit: 'g', step: 5, min: 20, max: 300 },
+  targetWeight: { key: 'targetWeight', label: 'profile.targetWeight', unit: '', step: 0.5, min: 30, max: 300 },
+  workoutsPerWeek: { key: 'workoutsPerWeek', label: 'profile.workoutsPerWeek', unit: '', step: 1, min: 1, max: 7 },
+  workoutsPerMonth: { key: 'workoutsPerMonth', label: 'profile.workoutsPerMonth', unit: '', step: 1, min: 1, max: 31 },
+  steps: { key: 'steps', label: 'profile.steps', unit: '', step: 500, min: 1000, max: 40000 },
+  waterMl: { key: 'waterMl', label: 'profile.waterGoal', unit: 'ml', step: 250, min: 500, max: 6000 },
+};
 
 export default function ProfileScreen() {
   const { t, tn } = useT();
   const s = useStore();
   const [editing, setEditing] = useState<GoalKey | null>(null);
-  const [confirm, setConfirm] = useState<'reset' | null>(null);
   const units = s.settings.units;
+  const g = s.goals;
 
   const initials = s.settings.name
     .trim()
@@ -45,25 +59,23 @@ export default function ProfileScreen() {
     .map((p) => p[0]?.toUpperCase())
     .join('');
   const totalVolume = s.sessions.reduce((n, x) => n + sessionVolume(x), 0);
-  const macroKcal = s.goals.protein * 4 + s.goals.carbs * 4 + s.goals.fat * 9;
-
-  const display = (key: GoalKey) => {
-    const v = s.goals[key];
-    if (key === 'targetWeight') return formatWeight(v, units);
-    if (key === 'kcal') return `${v} kcal`;
-    if (key === 'workoutsPerWeek' || key === 'workoutsPerMonth') return String(v);
-    if (key === 'waterMl') return `${v} ml`;
-    if (key === 'steps') return v.toLocaleString();
-    return `${v} g`;
-  };
-  const row = GOAL_ROWS.find((r) => r.key === editing);
+  const streak = dayStreak(activeDays({ sessions: s.sessions, meals: s.meals, water: s.water, supplementLogs: s.supplementLogs }));
+  const macroKcal = g.protein * 4 + g.carbs * 4 + g.fat * 9;
+  const macroOff = Math.abs(macroKcal - g.kcal) > 100;
+  const monthKey = new Date().toISOString().slice(0, 7);
+  const gymThisMonth = s.gymVisits.filter((v) => v.date.startsWith(monthKey)).length;
+  const row = editing ? GOAL_ROWS[editing] : null;
 
   return (
     <Screen tabBar>
-      <TabHeader title={t('profile.title')} />
-      <View style={styles.hero}>
+      <TabHeader
+        title={t('profile.title')}
+        right={<IconButton icon={GearSixIcon} label={t('profile.settings')} onPress={() => router.push('/settings')} />}
+      />
+
+      <Card style={styles.hero}>
         <View style={styles.avatar}>
-          {initials ? <Text style={styles.avatarText}>{initials}</Text> : <UserIcon size={38} color={colors.textOnAccent} weight="fill" />}
+          {initials ? <Text style={styles.avatarText}>{initials}</Text> : <UserIcon size={30} color={colors.textOnAccent} weight="fill" />}
         </View>
         <TextInput
           value={s.settings.name}
@@ -75,116 +87,115 @@ export default function ProfileScreen() {
           maxLength={40}
           returnKeyType="done"
         />
-      </View>
+      </Card>
 
       <Card style={styles.stats}>
-        <Stat label={t('profile.workouts')} value={String(s.sessions.length)} />
-        <Stat label={t('profile.totalVolume')} value={formatVolume(totalVolume, units)} />
-        <Stat label={t('today.streak')} value={tn('unit.weeks', goalWeekStreak(s.sessions, s.goals.workoutsPerWeek).current)} />
+        <Stat icon={BarbellIcon} label={t('profile.workouts')} value={String(s.sessions.length)} />
+        <Stat icon={StackIcon} label={t('profile.volumeShort')} value={formatVolume(totalVolume, units)} border />
+        <Stat icon={FireIcon} iconColor={colors.warning} label={t('today.streak')} value={tn('unit.days', streak)} border />
+      </Card>
+
+      <SectionTitle style={styles.section} title={t('profile.accountSection')} />
+      <Card style={styles.list}>
+        <ListRow icon={UsersIcon} tint={colors.accent} label={t('profile.account')} onPress={() => router.push('/account')} />
+        <Divider />
+        <ListRow
+          icon={QrCodeIcon}
+          tint={colors.success}
+          label={t('profile.gymVisits')}
+          sub={t('profile.gymThisMonth', { n: gymThisMonth })}
+          onPress={() => router.push('/gym')}
+        />
+        <Divider />
+        <ListRow icon={BellIcon} tint={colors.warning} label={t('profile.notifications')} onPress={() => router.push('/notifications')} />
       </Card>
 
       <SectionTitle style={styles.section} title={t('profile.goals')} />
-      <Card style={styles.list}>
-        {GOAL_ROWS.map((r, i) => (
-          <View key={r.key}>
-            {i > 0 && <Divider />}
+      <Card style={styles.macroCard}>
+        <Pressable
+          style={({ pressed }) => [styles.macroHead, pressed && pressedStyle]}
+          onPress={() => setEditing('kcal')}
+          accessibilityRole="button"
+          accessibilityLabel={t('profile.edit', { label: t('profile.kcal') })}
+        >
+          <IconTile icon={ForkKnifeIcon} tint={colors.accent} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.tileLabel}>{t('profile.kcal')}</Text>
+            <Text style={styles.tileValue}>
+              {g.kcal} <Text style={styles.tileUnit}>kcal</Text>
+            </Text>
+          </View>
+          <CaretRightIcon size={14} color={colors.textSecondary} weight="bold" />
+        </Pressable>
+        <View style={styles.macros}>
+          {(['protein', 'carbs', 'fat'] as const).map((k) => (
             <Pressable
-              style={styles.row}
-              onPress={() => setEditing(r.key)}
+              key={k}
+              style={({ pressed }) => [styles.macro, pressed && pressedStyle]}
+              onPress={() => setEditing(k)}
               accessibilityRole="button"
-              accessibilityLabel={t('profile.edit', { label: t(r.label) })}
+              accessibilityLabel={t('profile.edit', { label: t(GOAL_ROWS[k].label) })}
             >
-              <Text style={styles.rowLabel}>{t(r.label)}</Text>
-              <Text style={styles.rowValue}>{display(r.key)}</Text>
-              <CaretRightIcon size={14} color={colors.textSecondary} weight="bold" />
+              <Text style={styles.tileLabel}>{t(GOAL_ROWS[k].label)}</Text>
+              <Text style={styles.macroValue}>{g[k]} g</Text>
+              <View style={[styles.macroBar, { backgroundColor: colors[k] }]} />
             </Pressable>
-            {r.key === 'fat' && (
-              <Text style={[styles.hint, Math.abs(macroKcal - s.goals.kcal) > 100 && { color: colors.carbs }]}>
-                {t('profile.macroCheck', { n: macroKcal })}
-              </Text>
-            )}
-          </View>
-        ))}
+          ))}
+        </View>
+        <Text style={[styles.hint, macroOff && { color: colors.warning }]}>{t('profile.macroCheck', { n: macroKcal })}</Text>
       </Card>
 
-      <SectionTitle style={styles.section} title={t('profile.settings')} />
-      <Card style={styles.list}>
-        <Pressable style={styles.row} onPress={() => router.push('/notifications')} accessibilityRole="button">
-          <Text style={styles.rowLabel}>{t('profile.notifications')}</Text>
-          <CaretRightIcon size={14} color={colors.textSecondary} weight="bold" />
-        </Pressable>
-        <Divider />
-        <Pressable style={styles.row} onPress={() => router.push('/account')} accessibilityRole="button">
-          <Text style={styles.rowLabel}>{t('profile.account')}</Text>
-          <CaretRightIcon size={14} color={colors.textSecondary} weight="bold" />
-        </Pressable>
-        <Divider />
-        <Pressable style={styles.row} onPress={() => router.push('/gym')} accessibilityRole="button">
-          <Text style={styles.rowLabel}>{t('profile.gymVisits')}</Text>
-          <CaretRightIcon size={14} color={colors.textSecondary} weight="bold" />
-        </Pressable>
-        <Divider />
-        <View style={styles.settingRow}>
-          <Text style={styles.rowLabel}>{t('profile.language')}</Text>
-          <View style={styles.control}>
-            <Segmented<Lang>
-              value={s.settings.lang}
-              onChange={(lang) => s.setSettings({ lang })}
-              options={[
-                { value: 'en', label: 'English' },
-                { value: 'pl', label: 'Polski' },
-              ]}
-            />
-          </View>
-        </View>
-        <Divider />
-        <View style={styles.settingRow}>
-          <Text style={styles.rowLabel}>{t('profile.units')}</Text>
-          <View style={styles.control}>
-            <Segmented<Units>
-              value={units}
-              onChange={(u) => s.setSettings({ units: u })}
-              options={[
-                { value: 'kg', label: 'kg' },
-                { value: 'lb', label: 'lb' },
-              ]}
-            />
-          </View>
-        </View>
-        <Divider />
-        <View style={styles.settingCol}>
-          <Text style={styles.rowLabel}>{t('profile.restTimer')}</Text>
-          <Segmented
-            value={String(s.settings.restSec)}
-            onChange={(v) => s.setSettings({ restSec: Number(v) })}
-            options={['60', '90', '120', '180'].map((v) => ({ value: v, label: clock(Number(v)) }))}
-          />
-        </View>
-        <Divider />
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>{t('profile.haptics')}</Text>
-          <Switch
-            value={s.settings.haptics}
-            onValueChange={(haptics) => s.setSettings({ haptics })}
-            trackColor={{ true: colors.accent, false: colors.track }}
-            thumbColor={s.settings.haptics ? colors.textOnAccent : colors.textPrimary}
-            accessibilityLabel={t('profile.haptics')}
-          />
-        </View>
-      </Card>
-
-      <SectionTitle style={styles.section} title={t('profile.data')} />
-      <View style={styles.dataButtons}>
-        <Button label={t('profile.reset')} variant="danger" icon={TrashIcon} onPress={() => setConfirm('reset')} />
+      <View style={styles.grid}>
+        <GoalTile
+          icon={BarbellIcon}
+          tint={colors.success}
+          label={t('profile.workoutsPerWeek')}
+          value={String(g.workoutsPerWeek)}
+          onPress={() => setEditing('workoutsPerWeek')}
+          a11y={t('profile.edit', { label: t('profile.workoutsPerWeek') })}
+        />
+        <GoalTile
+          icon={BarbellIcon}
+          tint={colors.success}
+          label={t('profile.workoutsPerMonth')}
+          value={String(g.workoutsPerMonth)}
+          onPress={() => setEditing('workoutsPerMonth')}
+          a11y={t('profile.edit', { label: t('profile.workoutsPerMonth') })}
+        />
+        <GoalTile
+          icon={FootprintsIcon}
+          tint={colors.warning}
+          label={t('profile.steps')}
+          value={g.steps.toLocaleString()}
+          onPress={() => setEditing('steps')}
+          a11y={t('profile.edit', { label: t('profile.steps') })}
+        />
+        <GoalTile
+          icon={DropIcon}
+          tint={colors.fat}
+          label={t('profile.waterGoal')}
+          value={String(g.waterMl)}
+          unit="ml"
+          onPress={() => setEditing('waterMl')}
+          a11y={t('profile.edit', { label: t('profile.waterGoal') })}
+        />
+        <GoalTile
+          icon={ScalesIcon}
+          tint={colors.textPrimary}
+          label={t('profile.targetWeight')}
+          value={formatWeight(g.targetWeight, units)}
+          onPress={() => setEditing('targetWeight')}
+          wide
+          a11y={t('profile.edit', { label: t('profile.targetWeight') })}
+        />
       </View>
-      <Text style={styles.version}>GameChanger · {t('profile.version', { v: Constants.expoConfig?.version ?? '1.0.0' })}</Text>
 
       {row && (
         <NumberSheet
           visible={!!editing}
           onClose={() => setEditing(null)}
           title={t(row.label)}
-          value={row.key === 'targetWeight' ? toDisplayWeight(s.goals.targetWeight, units) : s.goals[row.key]}
+          value={row.key === 'targetWeight' ? toDisplayWeight(g.targetWeight, units) : g[row.key]}
           unit={row.key === 'targetWeight' ? units : row.unit}
           step={row.step}
           decimals={row.key === 'targetWeight' ? 1 : 0}
@@ -193,29 +204,27 @@ export default function ProfileScreen() {
           onSave={(v) => s.setGoals({ [row.key]: row.key === 'targetWeight' ? Math.round(fromDisplayWeight(v, units) * 10) / 10 : v })}
         />
       )}
-
-      <ConfirmSheet
-        visible={confirm === 'reset'}
-        title={t('profile.reset')}
-        body={t('profile.resetBody')}
-        confirmLabel={t('common.delete')}
-        destructive
-        onCancel={() => setConfirm(null)}
-        onConfirm={() => {
-          s.resetAll();
-          setConfirm(null);
-        }}
-      />
     </Screen>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function IconTile({ icon: Glyph, tint }: { icon: Icon; tint: string }) {
   return (
-    <View style={styles.stat}>
-      <Text style={styles.statLabel} numberOfLines={1}>
-        {label}
-      </Text>
+    <View style={[styles.iconTile, { backgroundColor: tint + '22' }]}>
+      <Glyph size={18} color={tint} weight="bold" />
+    </View>
+  );
+}
+
+function Stat({ icon: Glyph, iconColor, label, value, border }: { icon: Icon; iconColor?: string; label: string; value: string; border?: boolean }) {
+  return (
+    <View style={[styles.stat, border && styles.statBorder]}>
+      <View style={styles.statHead}>
+        <Glyph size={14} color={iconColor ?? colors.textSecondary} weight={iconColor ? 'fill' : 'bold'} />
+        <Text style={styles.statLabel} numberOfLines={1}>
+          {label}
+        </Text>
+      </View>
       <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Text>
@@ -223,31 +232,73 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ListRow({ icon, tint, label, sub, onPress }: { icon: Icon; tint: string; label: string; sub?: string; onPress: () => void }) {
+  return (
+    <Pressable style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]} onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
+      <IconTile icon={icon} tint={tint} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        {sub ? <Text style={styles.rowSub}>{sub}</Text> : null}
+      </View>
+      <CaretRightIcon size={14} color={colors.textSecondary} weight="bold" />
+    </Pressable>
+  );
+}
+
+function GoalTile(p: { icon: Icon; tint: string; label: string; value: string; unit?: string; onPress: () => void; a11y: string; wide?: boolean }) {
+  return (
+    <Card style={[styles.tile, p.wide && styles.tileWide]} onPress={p.onPress} accessibilityLabel={p.a11y}>
+      <View style={styles.tileTop}>
+        <IconTile icon={p.icon} tint={p.tint} />
+        <CaretRightIcon size={14} color={colors.textSecondary} weight="bold" />
+      </View>
+      <Text style={styles.tileLabel} numberOfLines={1}>
+        {p.label}
+      </Text>
+      <Text style={styles.tileValue} numberOfLines={1} adjustsFontSizeToFit>
+        {p.value}
+        {p.unit ? <Text style={styles.tileUnit}> {p.unit}</Text> : null}
+      </Text>
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
-  hero: { alignItems: 'center', gap: space.md, marginTop: space.sm },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: space.lg, marginTop: space.sm },
   avatar: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontFamily: fonts.bold, fontSize: 30, color: colors.textOnAccent },
-  name: { ...type.display, fontSize: 26, color: colors.textPrimary, textAlign: 'center', minWidth: 200, paddingVertical: 4 },
-  stats: { flexDirection: 'row', marginTop: space.xl },
-  stat: { flex: 1, gap: 2, minWidth: 0 },
-  statLabel: { ...type.caption, color: colors.textSecondary },
-  statValue: { fontFamily: fonts.bold, fontSize: 18, color: colors.textPrimary },
+  avatarText: { fontFamily: fonts.bold, fontSize: 24, color: colors.textOnAccent },
+  name: { ...type.display, fontSize: 24, color: colors.textPrimary, flex: 1, paddingVertical: 4 },
+  stats: { flexDirection: 'row', marginTop: space.md, paddingHorizontal: 0 },
+  stat: { flex: 1, gap: 6, minWidth: 0, paddingHorizontal: space.md },
+  statBorder: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.cardStroke },
+  statHead: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  statLabel: { ...type.caption, color: colors.textSecondary, flexShrink: 1 },
+  statValue: { fontFamily: fonts.bold, fontSize: 20, color: colors.textPrimary },
   section: { marginTop: space.xxl },
   list: { marginTop: space.md, paddingVertical: space.xs },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 52, paddingVertical: space.sm },
-  rowLabel: { ...type.body, color: colors.textPrimary, flex: 1 },
-  rowValue: { fontFamily: fonts.semibold, fontSize: 15, color: colors.textPrimary },
-  hint: { ...type.caption, color: colors.textSecondary, paddingBottom: space.md, marginTop: -space.xs },
-  settingRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
-  settingCol: { gap: space.md, paddingVertical: space.md },
-  control: { width: 170 },
-  dataButtons: { gap: space.sm, marginTop: space.lg },
-  version: { ...type.caption, color: colors.textSecondary, textAlign: 'center', marginTop: space.xxl },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 56, paddingVertical: space.sm },
+  rowLabel: { ...type.body, color: colors.textPrimary },
+  rowSub: { ...type.caption, color: colors.textSecondary, marginTop: 1 },
+  iconTile: { width: 34, height: 34, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
+  macroCard: { marginTop: space.md, gap: space.md },
+  macroHead: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  macros: { flexDirection: 'row', gap: space.md },
+  macro: { flex: 1, gap: 2 },
+  macroValue: { fontFamily: fonts.bold, fontSize: 17, color: colors.textPrimary },
+  macroBar: { height: 5, borderRadius: 3, marginTop: 6 },
+  hint: { ...type.caption, color: colors.textSecondary },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm },
+  tile: { width: '48.8%', gap: space.sm, minHeight: 118 },
+  tileWide: { width: '100%', minHeight: 0 },
+  tileTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  tileLabel: { ...type.caption, color: colors.textSecondary },
+  tileValue: { fontFamily: fonts.bold, fontSize: 20, color: colors.textPrimary },
+  tileUnit: { fontFamily: fonts.medium, fontSize: 13, color: colors.textSecondary },
 });

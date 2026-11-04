@@ -64,3 +64,4 @@ export { StackIcon } from 'phosphor-react-native/src/icons/Stack';
 export { CoffeeIcon } from 'phosphor-react-native/src/icons/Coffee';
 export { BowlFoodIcon } from 'phosphor-react-native/src/icons/BowlFood';
 export { CookieIcon } from 'phosphor-react-native/src/icons/Cookie';
+export { GearSixIcon } from 'phosphor-react-native/src/icons/GearSix';
