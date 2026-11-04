@@ -26,17 +26,17 @@ export function WorkoutHero({ day, next, active, onStart }: { day: PlanDay; next
   const open = s ? () => router.push(`/session/${s.id}`) : r ? () => router.push(`/routine/${r.id}`) : undefined;
 
   return (
-    <Pressable onPress={open} disabled={!open} accessibilityRole={open ? 'button' : undefined} style={({ pressed }) => [styles.card, pressed && { opacity: 0.94 }]}>
-      {image ? <Image source={image} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <Backdrop muted={!r || !!s} />}
+    <Pressable onPress={open} disabled={!open} accessibilityRole={open ? 'button' : undefined} style={({ pressed }) => [styles.card, !!image && styles.cardPhoto, pressed && { opacity: 0.94 }]}>
+      {image ? <Image source={image} style={styles.photo} resizeMode="cover" /> : <Backdrop muted={!r || !!s} />}
       {!image && (r || s) && (
         <View style={styles.glyph} pointerEvents="none">
           <BarbellIcon size={150} color="rgba(255,255,255,0.07)" weight="fill" />
         </View>
       )}
-      <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" pointerEvents="none">
         <Defs>
           <LinearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0.25" stopColor={colors.bg} stopOpacity="0" />
+            <Stop offset={image ? 0.45 : 0.25} stopColor={colors.bg} stopOpacity="0" />
             <Stop offset="1" stopColor={colors.bg} stopOpacity="0.92" />
           </LinearGradient>
         </Defs>
@@ -88,7 +88,7 @@ export function WorkoutHero({ day, next, active, onStart }: { day: PlanDay; next
 
 function Backdrop({ muted }: { muted: boolean }) {
   return (
-    <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+    <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" pointerEvents="none">
       <Defs>
         <RadialGradient id="glow" cx="78%" cy="18%" rx="85%" ry="75%">
           <Stop offset="0" stopColor={muted ? '#2A3542' : '#3B4D24'} stopOpacity="1" />
@@ -111,6 +111,8 @@ const styles = StyleSheet.create({
     borderColor: colors.cardStroke,
     justifyContent: 'flex-end',
   },
+  cardPhoto: { minHeight: 380 },
+  photo: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
   glyph: { position: 'absolute', right: -18, top: 6, transform: [{ rotate: '-18deg' }] },
   body: { padding: space.lg + 2, gap: 2 },
   badge: {

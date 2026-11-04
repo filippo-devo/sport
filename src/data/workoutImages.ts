@@ -6,4 +6,6 @@ import type { ImageSourcePropType } from 'react-native';
  *   'upper-push': require('../../assets/workouts/upper-push.jpg'),
  * Routines without a photo get the gradient backdrop.
  */
-export const WORKOUT_IMAGES: Record<string, ImageSourcePropType> = {};
+export const WORKOUT_IMAGES: Record<string, ImageSourcePropType> = {
+  'upper-push': require('../../assets/workouts/upper-push.jpg'),
+};
