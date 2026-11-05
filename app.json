@@ -25,13 +25,20 @@
     },
     "plugins": [
       "expo-font",
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "GameChanger saves your workout share images to Photos.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
       "expo-router",
       "expo-localization",
       [
         "expo-image-picker",
         {
           "photosPermission": "GameChanger uses your photos to save physique progress pictures.",
-          "cameraPermission": false,
+          "cameraPermission": "GameChanger uses the camera to take a photo for your workout share image.",
           "microphonePermission": false
         }
       ],

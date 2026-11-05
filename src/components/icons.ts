@@ -65,3 +65,6 @@ export { CoffeeIcon } from 'phosphor-react-native/src/icons/Coffee';
 export { BowlFoodIcon } from 'phosphor-react-native/src/icons/BowlFood';
 export { CookieIcon } from 'phosphor-react-native/src/icons/Cookie';
 export { GearSixIcon } from 'phosphor-react-native/src/icons/GearSix';
+export { DownloadSimpleIcon } from 'phosphor-react-native/src/icons/DownloadSimple';
+export { ImagesIcon } from 'phosphor-react-native/src/icons/Images';
+export { InstagramLogoIcon } from 'phosphor-react-native/src/icons/InstagramLogo';

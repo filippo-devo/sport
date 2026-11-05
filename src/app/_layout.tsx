@@ -34,6 +34,7 @@ function App() {
         <Stack.Screen name="routine-edit" options={{ presentation: 'modal' }} />
         <Stack.Screen name="plan-edit" options={{ presentation: 'modal' }} />
         <Stack.Screen name="gym/scan" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="share/[id]" options={{ presentation: 'modal' }} />
       </Stack>
     </SafeAreaProvider>
   );

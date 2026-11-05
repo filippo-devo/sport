@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ExerciseTile } from '../../components/EquipmentGlyph';
-import { CheckIcon, CopyIcon, TrashIcon, TrophyIcon } from '../../components/icons';
+import { CameraIcon, CheckIcon, CopyIcon, TrashIcon, TrophyIcon } from '../../components/icons';
 import { Button, Card, Divider, SectionTitle } from '../../components/ui/controls';
 import { NavBar } from '../../components/ui/headers';
 import { Screen } from '../../components/ui/layout';
@@ -77,6 +77,14 @@ export default function SessionScreen() {
         <Stat label={t('workout.sets')} value={String(doneSets(session.exercises))} />
         <Stat label={t('summary.prsShort')} value={String(prs.length)} accent={prs.length > 0} />
       </Card>
+
+      <Button
+        label={t('share.open')}
+        icon={CameraIcon}
+        variant={isFresh ? 'primary' : 'secondary'}
+        onPress={() => router.push({ pathname: '/share/[id]', params: { id: session.id } })}
+        style={styles.share}
+      />
 
       {prs.length > 0 && (
         <>
@@ -183,6 +191,7 @@ const styles = StyleSheet.create({
   statLabel: { ...type.caption, color: colors.textSecondary },
   statValue: { fontFamily: fonts.bold, fontSize: 19, color: colors.textPrimary },
   section: { marginTop: space.xxl },
+  share: { marginTop: space.md },
   prs: { gap: space.sm, marginTop: space.md },
   pr: {
     flexDirection: 'row',
