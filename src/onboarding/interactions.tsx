@@ -292,7 +292,9 @@ export function SlideToContinue({ label, onDone }: { label: string; onDone: () =
   }, [onDone]);
 
   useEffect(() => {
-    const loop = Animated.loop(Animated.timing(shimmer, { toValue: 1, duration: 1800, easing: Easing.inOut(Easing.quad), useNativeDriver: true }));
+    // JS driver on purpose: the label opacity multiplies this with the knob position (`x`, JS-driven),
+    // and one native animation in that graph would move `x` to native and crash the drag on device.
+    const loop = Animated.loop(Animated.timing(shimmer, { toValue: 1, duration: 1800, easing: Easing.inOut(Easing.quad), useNativeDriver: false }));
     loop.start();
     return () => loop.stop();
   }, [shimmer]);
