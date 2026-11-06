@@ -6,6 +6,6 @@ import type { ImageSourcePropType } from 'react-native';
  * Exercises without a photo get a dark gradient; the muscle ring shows either way.
  */
 export const EXERCISE_IMAGES: Record<string, ImageSourcePropType> = {
-  // Trial photo: the seated press shot Filip sent for the Train hero.
-  'seated-dumbbell-press': require('../../assets/workouts/upper-push-train.jpg'),
+  // Trial photo: the seated press shot Filip first sent for the Train hero.
+  'seated-dumbbell-press': require('../../assets/exercises/seated-dumbbell-press.jpg'),
 };
