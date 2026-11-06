@@ -30,6 +30,11 @@ function Backdrop({ id, shade }: { id: string; shade: boolean }) {
   );
 }
 
+/** Full-bleed photo (or gradient) for custom layouts like the live workout. */
+export function ExerciseBackdrop({ id }: { id: string }) {
+  return <Backdrop id={id} shade />;
+}
+
 /** Hero card at the top of the exercise screen. */
 export function ExerciseHero({ exercise }: { exercise: Exercise }) {
   const { t, L } = useT();
@@ -61,16 +66,18 @@ export function ExerciseHero({ exercise }: { exercise: Exercise }) {
 }
 
 /** Square thumbnail for exercise rows: photo or gradient, muscle ring bottom right. */
-export function ExerciseThumb({ exercise, size, label }: { exercise: Exercise; size: number; label?: string }) {
+export function ExerciseThumb({ exercise, size, label, ring = true }: { exercise: Exercise; size: number; label?: string; ring?: boolean }) {
   return (
     <View style={{ width: size, height: size }}>
       <View style={[styles.thumb, { width: size, height: size }]}>
         <Backdrop id={exercise.id} shade={false} />
         {label && !EXERCISE_IMAGES[exercise.id] ? <Text style={styles.thumbLabel}>{label}</Text> : null}
       </View>
-      <View style={styles.thumbRing}>
-        <MuscleRing primary={exercise.muscle} secondary={exercise.secondary} size={Math.round(size * 0.46)} />
-      </View>
+      {ring && (
+        <View style={styles.thumbRing}>
+          <MuscleRing primary={exercise.muscle} secondary={exercise.secondary} size={Math.round(size * 0.46)} />
+        </View>
+      )}
     </View>
   );
 }

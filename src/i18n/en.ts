@@ -746,6 +746,19 @@ export const en = {
   'profile.bodyMap': 'Muscle map figure',
   'profile.bodyMale': 'Male',
   'profile.bodyFemale': 'Female',
+  'workout.exerciseCount': '{n} exercise|{n} exercises',
+  'workout.setOf': 'Set {n} of {m}',
+  'workout.logSet': 'Log set {n}',
+  'workout.nextExercise': 'Next exercise',
+  'workout.backToList': 'All exercises',
+  'workout.upNext': 'Next:',
+  'workout.finishExercise': 'Finish exercise',
+  'workout.lastTime': 'Last time: {v}',
+  'workout.details': 'History & technique',
+  'workout.restTitle': 'Rest between sets',
+  'workout.exerciseDone': 'Exercise done',
+  'workout.colKgPerDb': '{u} / DB',
+  'workout.openExercise': 'Open {name}',
 } as const;
 
 export type Dict = Record<keyof typeof en, string>;

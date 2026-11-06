@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { StyleSheet, TextInput, type StyleProp, type TextStyle } from 'react-native';
 
 import { formatNumber } from '../../lib/units';
 import { colors, fonts, radius } from '../../theme/tokens';
@@ -14,10 +14,13 @@ type Props = {
   onCommit: (v: number | undefined) => void;
   done?: boolean;
   label: string;
+  /** Large gym-friendly cell for the single-exercise screen. */
+  large?: boolean;
+  style?: StyleProp<TextStyle>;
 };
 
 /** Numeric cell in the set table. Keeps a text draft while focused, commits parsed numbers. */
-export function NumCell({ value, placeholder, decimals = 0, onCommit, done, label }: Props) {
+export function NumCell({ value, placeholder, decimals = 0, onCommit, done, label, large, style }: Props) {
   const formatted = value != null ? formatNumber(value, decimals) : '';
   // While editing, show the raw draft (e.g. "72,"); otherwise the stored value.
   const [draft, setDraft] = useState<string | null>(null);
@@ -45,7 +48,7 @@ export function NumCell({ value, placeholder, decimals = 0, onCommit, done, labe
       returnKeyType="done"
       maxLength={6}
       accessibilityLabel={label}
-      style={[styles.cell, done && styles.cellDone, focused && styles.cellFocused]}
+      style={[styles.cell, large && styles.cellLarge, done && styles.cellDone, focused && styles.cellFocused, style]}
     />
   );
 }
@@ -65,6 +68,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     fontVariant: ['tabular-nums'],
   },
+  cellLarge: { height: 50, borderRadius: radius.md, fontFamily: fonts.bold, fontSize: 22, backgroundColor: colors.surface },
   cellDone: { backgroundColor: 'transparent' },
   cellFocused: { borderWidth: 1, borderColor: colors.accent },
 });

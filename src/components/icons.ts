@@ -68,3 +68,5 @@ export { GearSixIcon } from 'phosphor-react-native/src/icons/GearSix';
 export { DownloadSimpleIcon } from 'phosphor-react-native/src/icons/DownloadSimple';
 export { ImagesIcon } from 'phosphor-react-native/src/icons/Images';
 export { InstagramLogoIcon } from 'phosphor-react-native/src/icons/InstagramLogo';
+export { ChecksIcon } from 'phosphor-react-native/src/icons/Checks';
+export { InfoIcon } from 'phosphor-react-native/src/icons/Info';
