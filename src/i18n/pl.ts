@@ -744,4 +744,6 @@ export const pl: Dict = {
   'share.unavailable': "Udostępnianie nie jest dostępne na tym urządzeniu.",
   'share.failed': "Nie udało się stworzyć grafiki. Spróbuj ponownie.",
   'share.kcalNote': "Kalorie są szacowane z czasu treningu i Twojej ostatniej wagi.",
+
+  'profile.onboarding': 'Przejdź konfigurację ponownie',
 };

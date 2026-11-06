@@ -742,6 +742,8 @@ export const en = {
   'share.unavailable': "Sharing isn't available on this device.",
   'share.failed': "Couldn't create the image. Try again.",
   'share.kcalNote': "Calories are an estimate from workout time and your latest body weight.",
+
+  'profile.onboarding': 'Run setup again',
 } as const;
 
 export type Dict = Record<keyof typeof en, string>;
