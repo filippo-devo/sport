@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { ExerciseTile } from '../../components/EquipmentGlyph';
+import { ExerciseHero, MusclesWorked } from '../../components/muscles/ExerciseMedia';
 import { Card, Divider, SectionTitle } from '../../components/ui/controls';
 import { LineChart } from '../../components/ui/charts';
 import { NavBar } from '../../components/ui/headers';
@@ -11,7 +11,7 @@ import { useT } from '../../i18n';
 import { formatWeight, toDisplayWeight } from '../../lib/units';
 import { useStore } from '../../store';
 import { exerciseHistory, personalBest, setRecords, sortedSessions } from '../../store/derived';
-import { colors, fonts, radius, space, type } from '../../theme/tokens';
+import { colors, fonts, space, type } from '../../theme/tokens';
 
 export default function ExerciseDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -51,17 +51,7 @@ export default function ExerciseDetail() {
 
   return (
     <Screen top={<NavBar />}>
-      <View style={styles.hero}>
-        <ExerciseTile equipment={ex.equipment} size={64} />
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={styles.title} accessibilityRole="header">
-            {L(ex.name)}
-          </Text>
-          <Text style={styles.sub}>
-            {t(`muscle.${ex.muscle}`)} · {t(`equipment.${ex.equipment}`)}
-          </Text>
-        </View>
-      </View>
+      <ExerciseHero exercise={ex} />
 
       <View style={styles.stats}>
         <Card style={styles.stat}>
@@ -106,24 +96,8 @@ export default function ExerciseDetail() {
           ))}
       </View>
 
-      <View style={[styles.section, styles.muscles]}>
-        <Text style={styles.muscleLabel}>{t('exercise.primary')}</Text>
-        <View style={styles.tags}>
-          <Text style={[styles.tag, styles.tagPrimary]}>{t(`muscle.${ex.muscle}`)}</Text>
-        </View>
-        {ex.secondary.length > 0 && (
-          <>
-            <Text style={[styles.muscleLabel, { marginTop: space.md }]}>{t('exercise.secondary')}</Text>
-            <View style={styles.tags}>
-              {ex.secondary.map((m) => (
-                <Text key={m} style={styles.tag}>
-                  {t(`muscle.${m}`)}
-                </Text>
-              ))}
-            </View>
-          </>
-        )}
-      </View>
+      <SectionTitle style={styles.section} title={t('exercise.musclesWorked')} />
+      <MusclesWorked exercise={ex} />
 
       {records.length > 0 && (
         <>
@@ -178,9 +152,6 @@ export default function ExerciseDetail() {
 }
 
 const styles = StyleSheet.create({
-  hero: { flexDirection: 'row', alignItems: 'center', gap: space.lg, marginTop: space.sm },
-  title: { ...type.heroTitle, fontSize: 26, lineHeight: 30, color: colors.textPrimary },
-  sub: { ...type.body, color: colors.textSecondary, marginTop: 4 },
   stats: { flexDirection: 'row', gap: space.sm, marginTop: space.xl },
   stat: { flex: 1, padding: space.md, gap: 4 },
   statLabel: { ...type.caption, color: colors.textSecondary },
@@ -193,20 +164,6 @@ const styles = StyleSheet.create({
   stepNo: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.control, alignItems: 'center', justifyContent: 'center' },
   stepNoText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.accent },
   stepText: { ...type.body, fontFamily: fonts.regular, fontSize: 16, lineHeight: 22, color: colors.textPrimary, flex: 1 },
-  muscles: {},
-  muscleLabel: { ...type.caption, color: colors.textSecondary, marginBottom: space.sm },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  tag: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textPrimary,
-    paddingHorizontal: space.md,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    overflow: 'hidden',
-  },
-  tagPrimary: { backgroundColor: colors.accent, color: colors.textOnAccent },
   table: { marginTop: space.md, paddingVertical: space.xs },
   tr: { flexDirection: 'row', paddingVertical: space.sm + 2 },
   th: { ...type.caption, color: colors.textSecondary },

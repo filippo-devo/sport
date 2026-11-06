@@ -7,7 +7,7 @@ import { Button, Card, Divider, Segmented, SectionTitle } from '../components/ui
 import { NavBar } from '../components/ui/headers';
 import { Screen } from '../components/ui/layout';
 import { ConfirmSheet } from '../components/ui/sheets';
-import type { Lang, Units } from '../data/types';
+import type { BodySex, Lang, Units } from '../data/types';
 import { useT } from '../i18n';
 import { clock } from '../lib/date';
 import { useStore } from '../store';
@@ -45,6 +45,20 @@ export default function SettingsScreen() {
               options={[
                 { value: 'kg', label: 'kg' },
                 { value: 'lb', label: 'lb' },
+              ]}
+            />
+          </View>
+        </View>
+        <Divider />
+        <View style={styles.settingRow}>
+          <Text style={styles.rowLabel}>{t('profile.bodyMap')}</Text>
+          <View style={styles.control}>
+            <Segmented<BodySex>
+              value={s.settings.bodySex ?? 'male'}
+              onChange={(bodySex) => s.setSettings({ bodySex })}
+              options={[
+                { value: 'male', label: t('profile.bodyMale') },
+                { value: 'female', label: t('profile.bodyFemale') },
               ]}
             />
           </View>

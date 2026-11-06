@@ -199,6 +199,9 @@ export type ReminderSettings = {
   supplements: { on: boolean };
 };
 
+/** Which figure the muscle map draws. */
+export type BodySex = 'male' | 'female';
+
 export type Settings = {
   name: string;
   lang: Lang;
@@ -209,6 +212,8 @@ export type Settings = {
   photoEveryDays: number;
   /** Profile picture (a private copy, or a data URI on web). */
   avatarUri?: string;
+  /** Figure on the exercise muscle map; male when unset. */
+  bodySex?: BodySex;
 };
 
 /** Small stat tiles at the top of Today (the user picks up to three). */
