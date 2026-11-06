@@ -4,7 +4,6 @@ import { useStore } from '../store';
 // Onboarding has its own EN/PL strings so the flow stays self-contained on its branch.
 const en = {
   next: 'Continue',
-  skip: 'Skip',
   back: 'Back',
   step: 'Step {n} of {total}',
   pickUpTo: 'Pick up to {n}',
@@ -174,7 +173,6 @@ export type OKey = keyof typeof en;
 
 const pl: Record<OKey, string> = {
   next: 'Dalej',
-  skip: 'Pomiń',
   back: 'Wstecz',
   step: 'Krok {n} z {total}',
   pickUpTo: 'Wybierz do {n}',

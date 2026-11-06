@@ -43,7 +43,7 @@ import { Button, Segmented } from '../components/ui/controls';
 import { useLayout } from '../components/ui/layout';
 import { Ring } from '../components/ui/Ring';
 import { TimeSheet } from '../components/ui/TimeSheet';
-import type { Lang, Units } from '../data/types';
+import type { Units } from '../data/types';
 import { requestPermission } from '../lib/reminders';
 import { formatNumber } from '../lib/units';
 import { BigStepper, OptionCard, Options, Pill, ProgressLine, StepTitle, TileRow } from '../onboarding/components';
@@ -187,11 +187,6 @@ export default function OnboardingScreen() {
     s.setActiveProgram(s.saveProgram(buildProgram(a)));
     s.setReminders(remindersFrom(a, s.reminders));
     s.logWeight(a.weightKg);
-    router.replace('/');
-  };
-
-  const skipAll = () => {
-    if (!ONBOARDING_PREVIEW) useStore.getState().setSettings({ onboarded: true });
     router.replace('/');
   };
 
@@ -679,16 +674,6 @@ export default function OnboardingScreen() {
             <View style={styles.brand}>
               <LightningIcon size={18} color={colors.textOnAccent} weight="fill" />
             </View>
-            <View style={{ width: 150 }}>
-              <Segmented<Lang>
-                value={store.settings.lang}
-                onChange={(lang) => store.setSettings({ lang })}
-                options={[
-                  { value: 'pl', label: 'PL' },
-                  { value: 'en', label: 'EN' },
-                ]}
-              />
-            </View>
           </View>
           <View style={{ flex: 1 }} />
           <Text style={styles.welcomeEyebrow}>{ot('welcomeEyebrow').toUpperCase()}</Text>
@@ -723,13 +708,8 @@ export default function OnboardingScreen() {
                 <CaretLeftIcon size={20} color={colors.textPrimary} weight="bold" />
               </Pressable>
               <Text style={styles.stepLabel}>{counted >= 0 ? ot('step', { n: counted + 1, total: COUNTED.length }) : ''}</Text>
-              {step !== 'done' ? (
-                <Pressable accessibilityRole="button" onPress={skipAll} hitSlop={10} style={styles.skip}>
-                  <Text style={styles.skipText}>{ot('skip')}</Text>
-                </Pressable>
-              ) : (
-                <View style={styles.skip} />
-              )}
+              {/* Onboarding can't be skipped; this keeps the step label centred. */}
+              <View style={styles.skip} />
             </View>
             <ProgressLine value={counted >= 0 ? (counted + 1) / COUNTED.length : 1} />
           </View>
@@ -931,7 +911,6 @@ const styles = StyleSheet.create({
   back: { width: layout.control, height: layout.control, borderRadius: layout.control / 2, backgroundColor: colors.control, alignItems: 'center', justifyContent: 'center' },
   stepLabel: { ...type.caption, fontSize: 13, color: colors.textSecondary },
   skip: { minWidth: layout.control, alignItems: 'flex-end' },
-  skipText: { ...type.body, color: colors.textSecondary },
 
   footer: { paddingTop: space.md },
 
