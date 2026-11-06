@@ -51,6 +51,7 @@ import {
   bmi,
   buildProgram,
   DEFAULT_ANSWERS,
+  ONBOARDING_PREVIEW,
   profileFrom,
   remindersFrom,
   suggestNutrition,
@@ -157,6 +158,10 @@ export default function OnboardingScreen() {
   };
 
   const finish = () => {
+    if (ONBOARDING_PREVIEW) {
+      router.replace('/');
+      return;
+    }
     const s = useStore.getState();
     s.setSettings({ name: a.name.trim(), units: a.units, onboarded: true, profile: profileFrom(a) });
     s.setGoals({
@@ -177,7 +182,7 @@ export default function OnboardingScreen() {
   };
 
   const skipAll = () => {
-    useStore.getState().setSettings({ onboarded: true });
+    if (!ONBOARDING_PREVIEW) useStore.getState().setSettings({ onboarded: true });
     router.replace('/');
   };
 
@@ -629,6 +634,7 @@ export default function OnboardingScreen() {
               <SummaryRow label={ot('sumWeight')} value={`${fmtW(toShown(a.weightKg))} → ${fmtW(toShown(a.targetKg))} ${a.units}`} icon={ChartLineUpIcon} />
               <SummaryRow label={ot('sumWater')} value={`${formatNumber(a.waterMl / 1000, 2)} l · ${a.steps.toLocaleString('pl-PL').replace(/ /g, ' ')} ${ot('steps')}`} icon={DropIcon} last />
             </View>
+            {ONBOARDING_PREVIEW && <Text style={styles.note}>{ot('previewNote')}</Text>}
             {a.focus.length > 0 && (
               <View style={styles.focusRow}>
                 <BrainIcon size={16} color={colors.textSecondary} weight="bold" />

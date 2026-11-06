@@ -6,6 +6,7 @@ import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useCoachSync } from '../backend/sync';
+import { ONBOARDING_PREVIEW } from '../onboarding/model';
 import { useReminderSync } from '../lib/reminders';
 import { setDecimalSeparator } from '../lib/units';
 import { useHydrated, useStore } from '../store';
@@ -48,7 +49,7 @@ function App() {
  * who already use the app are not sent through it after this ships.
  */
 function useOnboardingGate() {
-  const needs = useStore((s) => !s.settings.onboarded && !s.settings.name && s.sessions.length === 0);
+  const needs = useStore((s) => ONBOARDING_PREVIEW || (!s.settings.onboarded && !s.settings.name && s.sessions.length === 0));
   useEffect(() => {
     if (needs) router.replace('/onboarding');
     // Only on launch.

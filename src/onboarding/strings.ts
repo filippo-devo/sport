@@ -164,6 +164,7 @@ const en = {
   sumWeight: 'Weight',
   sumWater: 'Water',
   doneCta: 'Start training',
+  previewNote: 'Preview mode: nothing is saved, your current data stays as it is.',
 } as const;
 
 export type OKey = keyof typeof en;
@@ -330,6 +331,7 @@ const pl: Record<OKey, string> = {
   sumWeight: 'Waga',
   sumWater: 'Woda',
   doneCta: 'Zaczynamy trening',
+  previewNote: 'Tryb podglądu: nic nie zostaje zapisane, Twoje obecne dane zostają bez zmian.',
 };
 
 const DICTS: Record<Lang, Record<OKey, string>> = { en, pl };

@@ -68,6 +68,13 @@ export const DEFAULT_ANSWERS: OnboardingAnswers = {
   waterReminder: false,
 };
 
+/**
+ * Preview mode while onboarding lives on its own branch: it opens on every launch and
+ * finishing it changes nothing, so testing it in Expo Go never overwrites real data.
+ * Set to false before merging into main.
+ */
+export const ONBOARDING_PREVIEW = true;
+
 const ACTIVITY_FACTOR: Record<Activity, number> = { sedentary: 1.2, light: 1.375, active: 1.55, very: 1.725 };
 const GOAL_ADJUST: Record<MainGoal, number> = { muscle: 1.1, fat: 0.82, strength: 1.05, fit: 1, endurance: 1.05 };
 
