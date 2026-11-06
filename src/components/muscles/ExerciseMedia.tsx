@@ -87,7 +87,7 @@ export function MusclesWorked({ exercise }: { exercise: Exercise }) {
   const { t } = useT();
   return (
     <View style={styles.card}>
-      <MuscleBody primary={exercise.muscle} secondary={exercise.secondary} height={210} />
+      <MuscleBody primary={exercise.muscle} secondary={exercise.secondary} height={240} />
       <View style={styles.legend}>
         <View>
           <View style={styles.legendHead}>
