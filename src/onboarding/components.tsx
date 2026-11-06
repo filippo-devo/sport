@@ -2,6 +2,7 @@ import { Children, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CheckIcon, MinusIcon, PlusIcon, type Icon } from '../components/icons';
+import { burstAt, useBurst, useHaptics } from './interactions';
 import { colors, fonts, radius, space, type } from '../theme/tokens';
 
 /** Thin progress line under the top bar (Centr / Tonal pattern), animated between steps. */
@@ -47,11 +48,23 @@ type OptionProps = {
 
 /** Full-width answer card with a radio / check on the right. */
 export function OptionCard({ title, description, icon: Glyph, leading, selected, multi, disabled, onPress }: OptionProps) {
+  const fire = useBurst();
+  const h = useHaptics();
+  const [pop] = useState(() => new Animated.Value(1));
   return (
+    <Animated.View style={{ transform: [{ scale: pop }] }}>
     <Pressable
       accessibilityRole={multi ? 'checkbox' : 'radio'}
       accessibilityState={{ checked: selected, disabled }}
-      onPress={onPress}
+      onPress={(e) => {
+        burstAt(fire, e);
+        h.select();
+        Animated.sequence([
+          Animated.timing(pop, { toValue: 0.97, duration: 70, useNativeDriver: true }),
+          Animated.spring(pop, { toValue: 1, damping: 8, stiffness: 260, useNativeDriver: true }),
+        ]).start();
+        onPress();
+      }}
       disabled={disabled}
       style={({ pressed }) => [styles.option, selected && styles.optionSelected, disabled && { opacity: 0.4 }, pressed && { opacity: 0.85 }]}
     >
@@ -68,6 +81,7 @@ export function OptionCard({ title, description, icon: Glyph, leading, selected,
         {selected && (multi ? <CheckIcon size={14} color={colors.textOnAccent} weight="bold" /> : <View style={styles.radioDot} />)}
       </View>
     </Pressable>
+    </Animated.View>
   );
 }
 

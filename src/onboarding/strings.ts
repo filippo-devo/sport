@@ -167,6 +167,12 @@ const en = {
   sumWater: 'Water',
   doneCta: 'Start training',
   previewNote: 'Preview mode: nothing is saved, your current data stays as it is.',
+  tapToContinue: 'Tap to continue',
+  slideToContinue: 'Slide to continue',
+  pickOne: 'Pick one answer',
+  holdToStart: 'Press and hold to start',
+  commit: 'I commit to sticking with my plan.',
+  commitName: 'I, {name}, commit to sticking with my plan.',
 } as const;
 
 export type OKey = keyof typeof en;
@@ -336,6 +342,12 @@ const pl: Record<OKey, string> = {
   sumWater: 'Woda',
   doneCta: 'Zaczynamy trening',
   previewNote: 'Tryb podglądu: nic nie zostaje zapisane, Twoje obecne dane zostają bez zmian.',
+  tapToContinue: 'Dotknij, aby kontynuować',
+  slideToContinue: 'Przesuń, aby kontynuować',
+  pickOne: 'Wybierz jedną odpowiedź',
+  holdToStart: 'Przytrzymaj, aby zacząć',
+  commit: 'Zobowiązuję się trzymać swojego planu.',
+  commitName: 'Ja, {name}, zobowiązuję się trzymać swojego planu.',
 };
 
 const DICTS: Record<Lang, Record<OKey, string>> = { en, pl };

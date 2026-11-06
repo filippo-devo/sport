@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -46,7 +45,7 @@ import { TimeSheet } from '../components/ui/TimeSheet';
 import type { Units } from '../data/types';
 import { requestPermission } from '../lib/reminders';
 import { formatNumber } from '../lib/units';
-import { BigStepper, OptionCard, Options, Pill, ProgressLine, StepTitle, TileRow } from '../onboarding/components';
+import { BigStepper, OptionCard, Options, Pill, ProgressLine, Rise, StepTitle, TileRow } from '../onboarding/components';
 import {
   bmi,
   buildProgram,
@@ -67,6 +66,7 @@ import {
   type Sex,
 } from '../onboarding/model';
 import { useOT, type OKey } from '../onboarding/strings';
+import { BurstLayer, burstAt, ChargeButton, HeroSlides, HoldToCommit, SlideToContinue, useBurst, useHaptics } from '../onboarding/interactions';
 import { useStore } from '../store';
 import { colors, fonts, layout, radius, space, type } from '../theme/tokens';
 
@@ -114,11 +114,36 @@ const ACTIVITY_ICONS: Record<Activity, Icon> = {
   very: LightningIcon,
 };
 const LB = 2.20462;
+const CHOICE_STEPS: StepId[] = ['goal', 'sex', 'experience', 'pushups', 'place', 'length', 'activity'];
+const HERO_PHOTOS = [
+  require('../../assets/workouts/pull-arms.jpg'),
+  require('../../assets/workouts/legs-glutes.jpg'),
+  require('../../assets/workouts/full-b.jpg'),
+];
+
+/** "Tap to continue" that fades in after a moment, so the fact gets read first. */
+function TapHint({ label }: { label: string }) {
+  const [v] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(1500),
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(v, { toValue: 1, duration: 800, useNativeDriver: true }),
+          Animated.timing(v, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+        ]),
+      ),
+    ]).start();
+  }, [v]);
+  return <Animated.Text style={[styles.tapHint, { opacity: v }]}>{label}</Animated.Text>;
+}
 
 export default function OnboardingScreen() {
   const { ot, weekdays, daysCount } = useOT();
   const { insets, frameWidth, gutter } = useLayout();
   const store = useStore();
+  const fire = useBurst();
+  const haptics = useHaptics();
   const [a, setA] = useState<OnboardingAnswers>(() => ({
     ...DEFAULT_ANSWERS,
     name: store.settings.name,
@@ -133,14 +158,15 @@ export default function OnboardingScreen() {
   // Step transition: the current screen slides out and fades, then the next one springs in
   // from the other side (direction follows forward / back). `pos` runs -1 … 0 … 1.
   const [pos] = useState(() => new Animated.Value(0));
-  const busy = useRef(false);
-
+  const [pendingFor, setPendingFor] = useState<StepId | null>(null);
   const go = (to: number) => {
     const target = Math.max(0, Math.min(STEPS.length - 1, to));
-    if (busy.current || target === index) return;
-    busy.current = true;
+    if (target === index) return;
     const dir = target > index ? 1 : -1;
-    Animated.timing(pos, { toValue: -dir, duration: 170, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(() => {
+    if (dir < 0) setPendingFor(null);
+    // A second tap restarts this exit animation; only the run that finishes changes the step.
+    Animated.timing(pos, { toValue: -dir, duration: 170, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(({ finished }) => {
+      if (!finished) return;
       pos.setValue(dir);
       setIndex(target);
     });
@@ -148,22 +174,35 @@ export default function OnboardingScreen() {
 
   // Spring the new step in once it has mounted (a view that attaches mid-animation misses it).
   useEffect(() => {
-    busy.current = false;
     Animated.spring(pos, { toValue: 0, damping: 18, stiffness: 170, mass: 0.9, useNativeDriver: true }).start();
   }, [pos, index]);
 
-  const next = () => {
+  const next = (latest?: OnboardingAnswers) => {
+    // Auto-advancing steps pass the answers they just set (state isn't updated yet).
+    const cur = latest ?? a;
     // Fill suggested values from earlier answers until the user edits them.
     if (step === 'weight' && !touched.target) {
-      const t = a.goal === 'fat' ? a.weightKg * 0.92 : a.goal === 'muscle' ? a.weightKg + 3 : a.weightKg;
+      const t = cur.goal === 'fat' ? cur.weightKg * 0.92 : cur.goal === 'muscle' ? cur.weightKg + 3 : cur.weightKg;
       set({ targetKg: Math.round(t * 2) / 2 });
     }
     if (step === 'activity') {
-      if (!touched.nutrition) set(suggestNutrition(a));
-      if (!touched.water) set({ waterMl: suggestWater(a.weightKg, a.days.length) });
-      if (!touched.steps) set({ steps: suggestSteps(a.activity) });
+      if (!touched.nutrition) set(suggestNutrition(cur));
+      if (!touched.water) set({ waterMl: suggestWater(cur.weightKg, cur.days.length) });
+      if (!touched.steps) set({ steps: suggestSteps(cur.activity) });
     }
     go(index + 1);
+  };
+
+  // Single-choice steps: tapping an answer selects it and moves on (no "Continue" button).
+  const [answered, setAnswered] = useState<StepId[]>([]);
+  const picked = (id: StepId) => answered.includes(id);
+  const choose = (patch: Partial<OnboardingAnswers>) => {
+    if (pendingFor === step) return; // already moving on
+    setPendingFor(step);
+    const na = { ...a, ...patch };
+    setA(na);
+    setAnswered((x) => (x.includes(step) ? x : [...x, step]));
+    setTimeout(() => next(na), 520);
   };
 
   const finish = () => {
@@ -254,8 +293,8 @@ export default function OnboardingScreen() {
                   icon={GOAL_ICONS[g]}
                   title={ot(`goal_${g}` as OKey)}
                   description={ot(`goal_${g}_d` as OKey)}
-                  selected={a.goal === g}
-                  onPress={() => set({ goal: g })}
+                  selected={picked('goal') && a.goal === g}
+                  onPress={() => choose({ goal: g })}
                 />
               ))}
             </Options>
@@ -298,6 +337,7 @@ export default function OnboardingScreen() {
             <Text style={styles.factEyebrow}>{ot('factEyebrow').toUpperCase()}</Text>
             <Text style={styles.factTitle}>{ot(`factTitle_${a.goal}` as OKey)}</Text>
             <Text style={styles.factBody}>{ot('factBody')}</Text>
+            <TapHint label={ot('tapToContinue')} />
           </View>
         );
       }
@@ -308,7 +348,7 @@ export default function OnboardingScreen() {
             <StepTitle title={ot('sexTitle')} body={ot('sexBody')} />
             <Options>
               {opts.map((x) => (
-                <OptionCard key={x} title={ot(`sex_${x}` as OKey)} selected={a.sex === x} onPress={() => set({ sex: x })} />
+                <OptionCard key={x} title={ot(`sex_${x}` as OKey)} selected={picked('sex') && a.sex === x} onPress={() => choose({ sex: x })} />
               ))}
             </Options>
           </>
@@ -390,8 +430,8 @@ export default function OnboardingScreen() {
                   leading={<Bars level={i + 1} on={a.experience === x} />}
                   title={ot(`exp_${x}` as OKey)}
                   description={ot(`exp_${x}_d` as OKey)}
-                  selected={a.experience === x}
-                  onPress={() => set({ experience: x })}
+                  selected={picked('experience') && a.experience === x}
+                  onPress={() => choose({ experience: x })}
                 />
               ))}
             </Options>
@@ -405,13 +445,17 @@ export default function OnboardingScreen() {
             <StepTitle title={ot('pushTitle')} body={ot('pushBody')} />
             <View style={styles.grid}>
               {opts.map((x) => {
-                const on = a.pushups === x;
+                const on = picked('pushups') && a.pushups === x;
                 return (
                   <Pressable
                     key={x}
                     accessibilityRole="radio"
                     accessibilityState={{ checked: on }}
-                    onPress={() => set({ pushups: x })}
+                    onPress={(e) => {
+                      burstAt(fire, e);
+                      haptics.select();
+                      choose({ pushups: x });
+                    }}
                     style={({ pressed }) => [styles.gridCell, on && styles.gridCellOn, pressed && { opacity: 0.85 }]}
                   >
                     <Text style={[styles.gridValue, on && { color: colors.textOnAccent }]}>{x.replace('-', '–')}</Text>
@@ -438,8 +482,8 @@ export default function OnboardingScreen() {
                   icon={icon}
                   title={ot(`place_${v}` as OKey)}
                   description={ot(`place_${v}_d` as OKey)}
-                  selected={a.place === v}
-                  onPress={() => set({ place: v })}
+                  selected={picked('place') && a.place === v}
+                  onPress={() => choose({ place: v })}
                 />
               ))}
             </Options>
@@ -467,7 +511,7 @@ export default function OnboardingScreen() {
             <StepTitle title={ot('lengthTitle')} body={ot('lengthBody')} />
             <Options>
               {[30, 45, 60, 75, 90].map((m) => (
-                <OptionCard key={m} title={`${m} ${ot('min')}`} selected={a.sessionMin === m} onPress={() => set({ sessionMin: m })} />
+                <OptionCard key={m} title={`${m} ${ot('min')}`} selected={picked('length') && a.sessionMin === m} onPress={() => choose({ sessionMin: m })} />
               ))}
             </Options>
           </>
@@ -484,8 +528,8 @@ export default function OnboardingScreen() {
                   icon={ACTIVITY_ICONS[x]}
                   title={ot(`activity_${x}` as OKey)}
                   description={ot(`activity_${x}_d` as OKey)}
-                  selected={a.activity === x}
-                  onPress={() => set({ activity: x })}
+                  selected={picked('activity') && a.activity === x}
+                  onPress={() => choose({ activity: x })}
                 />
               ))}
             </Options>
@@ -657,7 +701,8 @@ export default function OnboardingScreen() {
   if (step === 'welcome') {
     return (
       <Animated.View style={[styles.screen, { opacity: pos.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 1, 0] }) }]}>
-        <Image source={require('../../assets/workouts/upper-push.jpg')} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <BurstLayer>
+        <HeroSlides photos={HERO_PHOTOS} />
         <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
           <Defs>
             <LinearGradient id="welcomeFade" x1="0" y1="0" x2="0" y2="1">
@@ -676,14 +721,25 @@ export default function OnboardingScreen() {
             </View>
           </View>
           <View style={{ flex: 1 }} />
-          <Text style={styles.welcomeEyebrow}>{ot('welcomeEyebrow').toUpperCase()}</Text>
-          <Text style={styles.welcomeTitle}>{ot('welcomeTitle')}</Text>
-          <Text style={styles.welcomeBody}>{ot('welcomeBody')}</Text>
+          <Rise delay={200}>
+            <Text style={styles.welcomeEyebrow}>{ot('welcomeEyebrow').toUpperCase()}</Text>
+          </Rise>
+          {ot('welcomeTitle')
+            .split('\n')
+            .map((line, i) => (
+              <Rise key={i} delay={350 + i * 160}>
+                <Text style={styles.welcomeTitle}>{line}</Text>
+              </Rise>
+            ))}
+          <Rise delay={900}>
+            <Text style={styles.welcomeBody}>{ot('welcomeBody')}</Text>
+          </Rise>
           <View style={{ paddingBottom: Math.max(insets.bottom, space.lg) + space.sm, gap: space.md, marginTop: space.xxl }}>
-            <Button label={ot('welcomeCta')} onPress={next} style={{ height: 56 }} />
+            <ChargeButton label={ot('welcomeCta')} onPress={() => next()} lockMs={1600} resetKey="welcome" />
             <Text style={styles.welcomeTime}>{ot('welcomeTime')}</Text>
           </View>
         </View>
+        </BurstLayer>
       </Animated.View>
     );
   }
@@ -698,7 +754,25 @@ export default function OnboardingScreen() {
     ],
   };
 
+  // Each kind of step ends differently, so the flow doesn't feel like one button tapped 20 times.
+  const footer = () => {
+    if (step === 'build' || step === 'fact') return null;
+    if (step === 'done') {
+      const first = a.name.trim().split(/\s+/)[0];
+      return (
+        <View style={{ alignItems: 'center' }}>
+          <Text style={styles.commit}>{first ? ot('commitName', { name: first }) : ot('commit')}</Text>
+          <HoldToCommit label={ot('holdToStart')} onDone={finish} />
+        </View>
+      );
+    }
+    if (step === 'intro') return <SlideToContinue label={ot('slideToContinue')} onDone={() => next()} />;
+    if (CHOICE_STEPS.includes(step)) return <Text style={styles.pickHint}>{ot('pickOne')}</Text>;
+    return <ChargeButton label={ot('next')} onPress={() => next()} disabled={!canContinue} resetKey={step} />;
+  };
+
   return (
+    <BurstLayer>
     <View style={styles.screen}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.frame, { width: frameWidth }]}>
         {showChrome && (
@@ -723,21 +797,21 @@ export default function OnboardingScreen() {
           ]}
         >
           <Animated.View key={step} style={stepStyle}>
-            {body()}
+            {step === 'fact' ? (
+              <Pressable accessibilityRole="button" onPress={() => next()} style={{ flex: 1 }}>
+                {body()}
+              </Pressable>
+            ) : (
+              body()
+            )}
           </Animated.View>
         </ScrollView>
-        {step !== 'build' && (
-          <View style={[styles.footer, { paddingHorizontal: gutter, paddingBottom: Math.max(insets.bottom, space.lg) + space.xs }]}>
-            <Button
-              label={step === 'done' ? ot('doneCta') : ot('next')}
-              onPress={step === 'done' ? finish : next}
-              disabled={!canContinue}
-              style={{ height: 56 }}
-            />
-          </View>
-        )}
+        <View style={[styles.footer, { paddingHorizontal: gutter, paddingBottom: Math.max(insets.bottom, space.lg) + space.xs }]}>
+          {footer()}
+        </View>
       </KeyboardAvoidingView>
     </View>
+    </BurstLayer>
   );
 }
 
@@ -912,7 +986,10 @@ const styles = StyleSheet.create({
   stepLabel: { ...type.caption, fontSize: 13, color: colors.textSecondary },
   skip: { minWidth: layout.control, alignItems: 'flex-end' },
 
-  footer: { paddingTop: space.md },
+  footer: { paddingTop: space.md, minHeight: 56 + space.md },
+  pickHint: { ...type.body, color: colors.textSecondary, textAlign: 'center', paddingVertical: space.lg },
+  tapHint: { ...type.caption, fontSize: 13, letterSpacing: 1, color: colors.accent, marginTop: space.xxxl, textTransform: 'uppercase' },
+  commit: { ...type.body, color: colors.textPrimary, textAlign: 'center' },
 
   feature: { flexDirection: 'row', gap: space.lg, alignItems: 'flex-start' },
   featureIcon: { width: 48, height: 48, borderRadius: 14, backgroundColor: colors.surfaceAccent, borderWidth: 1, borderColor: colors.hairline, alignItems: 'center', justifyContent: 'center' },

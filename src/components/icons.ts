@@ -74,3 +74,4 @@ export { HeartbeatIcon } from 'phosphor-react-native/src/icons/Heartbeat';
 export { HouseIcon } from 'phosphor-react-native/src/icons/House';
 export { PersonSimpleRunIcon } from 'phosphor-react-native/src/icons/PersonSimpleRun';
 export { PersonSimpleWalkIcon } from 'phosphor-react-native/src/icons/PersonSimpleWalk';
+export { CaretDoubleRightIcon } from 'phosphor-react-native/src/icons/CaretDoubleRight';
