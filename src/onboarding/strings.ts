@@ -152,6 +152,9 @@ const en = {
   build2: 'Choosing workouts for your goal',
   build3: 'Placing sessions on your days',
   build4: 'Setting up reminders',
+  build5: 'Matching volume to your experience',
+  build6: 'Setting water and step goals',
+  buildReady: 'Your plan is ready',
 
   doneEyebrow: 'All set',
   doneTitle: 'Your plan is ready, {name}!',
@@ -319,6 +322,9 @@ const pl: Record<OKey, string> = {
   build2: 'Dobieramy treningi do celu',
   build3: 'Rozkładamy treningi na Twoje dni',
   build4: 'Ustawiamy przypomnienia',
+  build5: 'Dopasowujemy objętość do doświadczenia',
+  build6: 'Ustalamy cele wody i kroków',
+  buildReady: 'Plan gotowy',
 
   doneEyebrow: 'Gotowe',
   doneTitle: 'Twój plan jest gotowy, {name}!',

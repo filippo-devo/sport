@@ -130,18 +130,27 @@ export default function OnboardingScreen() {
   const step: StepId = STEPS[index];
   const set = (patch: Partial<OnboardingAnswers>) => setA((prev) => ({ ...prev, ...patch }));
 
-  // Slide + fade each new step in.
-  const [enter] = useState(() => new Animated.Value(1));
-  const [dir, setDir] = useState(1);
-  useEffect(() => {
-    enter.setValue(0);
-    Animated.timing(enter, { toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-  }, [enter, index]);
+  // Step transition: the current screen slides out and fades, then the next one springs in
+  // from the other side (direction follows forward / back). `pos` runs -1 … 0 … 1.
+  const [pos] = useState(() => new Animated.Value(0));
+  const busy = useRef(false);
 
   const go = (to: number) => {
-    setDir(to > index ? 1 : -1);
-    setIndex(Math.max(0, Math.min(STEPS.length - 1, to)));
+    const target = Math.max(0, Math.min(STEPS.length - 1, to));
+    if (busy.current || target === index) return;
+    busy.current = true;
+    const dir = target > index ? 1 : -1;
+    Animated.timing(pos, { toValue: -dir, duration: 170, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(() => {
+      pos.setValue(dir);
+      setIndex(target);
+    });
   };
+
+  // Spring the new step in once it has mounted (a view that attaches mid-animation misses it).
+  useEffect(() => {
+    busy.current = false;
+    Animated.spring(pos, { toValue: 0, damping: 18, stiffness: 170, mass: 0.9, useNativeDriver: true }).start();
+  }, [pos, index]);
 
   const next = () => {
     // Fill suggested values from earlier answers until the user edits them.
@@ -652,7 +661,7 @@ export default function OnboardingScreen() {
   // ---------- welcome: full-bleed photo, no top bar ----------
   if (step === 'welcome') {
     return (
-      <View style={styles.screen}>
+      <Animated.View style={[styles.screen, { opacity: pos.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 1, 0] }) }]}>
         <Image source={require('../../assets/workouts/upper-push.jpg')} style={StyleSheet.absoluteFill} resizeMode="cover" />
         <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
           <Defs>
@@ -690,13 +699,19 @@ export default function OnboardingScreen() {
             <Text style={styles.welcomeTime}>{ot('welcomeTime')}</Text>
           </View>
         </View>
-      </View>
+      </Animated.View>
     );
   }
 
   const counted = COUNTED.indexOf(step as (typeof COUNTED)[number]);
   const showChrome = step !== 'build';
-  const translateX = enter.interpolate({ inputRange: [0, 1], outputRange: [24 * dir, 0] });
+  const stepStyle = {
+    opacity: pos.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 1, 0] }),
+    transform: [
+      { translateX: pos.interpolate({ inputRange: [-1, 0, 1], outputRange: [-70, 0, 70] }) },
+      { scale: pos.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.97, 1, 0.97] }) },
+    ],
+  };
 
   return (
     <View style={styles.screen}>
@@ -727,7 +742,7 @@ export default function OnboardingScreen() {
             (step === 'fact' || step === 'build') && { flexGrow: 1, justifyContent: 'center' },
           ]}
         >
-          <Animated.View key={step} style={{ opacity: enter, transform: [{ translateX }] }}>
+          <Animated.View key={step} style={stepStyle}>
             {body()}
           </Animated.View>
         </ScrollView>
@@ -827,18 +842,41 @@ function Building({ onDone }: { onDone: () => void }) {
   const { ot } = useOT();
   const [done, setDone] = useState(0);
   const [progress] = useState(() => new Animated.Value(0));
-  const lines: OKey[] = ['build1', 'build2', 'build3', 'build4'];
+  const [spin] = useState(() => new Animated.Value(0));
+  const lines: OKey[] = ['build1', 'build5', 'build2', 'build6', 'build3', 'build4'];
   const doneRef = useRef(onDone);
   useEffect(() => {
     doneRef.current = onDone;
   }, [onDone]);
 
   useEffect(() => {
-    Animated.timing(progress, { toValue: 1, duration: 3200, easing: Easing.inOut(Easing.quad), useNativeDriver: false }).start();
-    const timers = [700, 1400, 2100, 2800].map((ms, i) => setTimeout(() => setDone(i + 1), ms));
-    timers.push(setTimeout(() => doneRef.current(), 3700));
-    return () => timers.forEach(clearTimeout);
-  }, [progress]);
+    // Uneven pace with short pauses, so it reads like real work rather than a timer (~10 s).
+    const stages: [number, number][] = [
+      [0.14, 1400],
+      [0.31, 1700],
+      [0.47, 1500],
+      [0.66, 1900],
+      [0.84, 1700],
+      [1, 1300],
+    ];
+    const steps = stages.flatMap(([to, ms], i) => [
+      Animated.timing(progress, { toValue: to, duration: ms, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }),
+      Animated.delay(i === stages.length - 1 ? 0 : 180),
+    ]);
+    Animated.sequence(steps).start();
+    let t = 0;
+    const timers = stages.map(([, ms], i) => {
+      t += ms + 180;
+      return setTimeout(() => setDone(i + 1), t - 180);
+    });
+    timers.push(setTimeout(() => doneRef.current(), t + 700));
+    const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 900, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => {
+      timers.forEach(clearTimeout);
+      loop.stop();
+    };
+  }, [progress, spin]);
 
   const [pct, setPct] = useState(0);
   useEffect(() => {
@@ -846,24 +884,32 @@ function Building({ onDone }: { onDone: () => void }) {
     return () => progress.removeListener(id);
   }, [progress]);
 
+  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+
   return (
     <View style={{ alignItems: 'center', gap: space.xxxl }}>
       <Ring value={pct / 100} size={156} stroke={10} color={colors.accent}>
         <Text style={styles.buildPct}>{pct}%</Text>
       </Ring>
-      <Text style={[styles.factTitle, { fontSize: 26, lineHeight: 30 }]}>{ot('buildTitle')}</Text>
+      <Text style={[styles.factTitle, { fontSize: 26, lineHeight: 30 }]}>{ot(done >= lines.length ? 'buildReady' : 'buildTitle')}</Text>
       <View style={{ alignSelf: 'stretch', gap: space.lg }}>
-        {lines.map((k, i) => (
-          <View key={k} style={[styles.buildLine, i >= done && { opacity: 0.35 }]}>
-            <View style={[styles.buildCheck, i < done && { backgroundColor: colors.accent, borderColor: colors.accent }]}>
-              {i < done && <CheckIcon size={13} color={colors.textOnAccent} weight="bold" />}
+        {lines.map((k, i) => {
+          const state = i < done ? 'done' : i === done ? 'active' : 'todo';
+          return (
+            <View key={k} style={[styles.buildLine, state === 'todo' && { opacity: 0.3 }]}>
+              {state === 'done' ? (
+                <View style={[styles.buildCheck, { backgroundColor: colors.accent, borderColor: colors.accent }]}>
+                  <CheckIcon size={13} color={colors.textOnAccent} weight="bold" />
+                </View>
+              ) : state === 'active' ? (
+                <Animated.View style={[styles.buildCheck, styles.buildSpinner, { transform: [{ rotate }] }]} />
+              ) : (
+                <View style={styles.buildCheck} />
+              )}
+              <Text style={[styles.buildText, state === 'active' && { color: colors.accent }]}>{ot(k)}</Text>
             </View>
-            <Text style={styles.buildText}>{ot(k)}</Text>
-          </View>
-        ))}
-      </View>
-      <View style={{ alignSelf: 'stretch' }}>
-        <ProgressLine value={pct / 100} />
+          );
+        })}
       </View>
     </View>
   );
@@ -963,5 +1009,6 @@ const styles = StyleSheet.create({
   buildPct: { fontFamily: fonts.bold, fontSize: 40, color: colors.textPrimary, fontVariant: ['tabular-nums'] },
   buildLine: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   buildCheck: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: colors.track, alignItems: 'center', justifyContent: 'center' },
+  buildSpinner: { borderColor: colors.track, borderTopColor: colors.accent },
   buildText: { ...type.body, color: colors.textPrimary },
 });

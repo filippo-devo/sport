@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Children, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CheckIcon, MinusIcon, PlusIcon, type Icon } from '../components/icons';
@@ -21,8 +21,14 @@ export function StepTitle({ eyebrow, title, body }: { eyebrow?: string; title: s
   return (
     <View style={styles.titleBlock}>
       {eyebrow ? <Text style={styles.eyebrow}>{eyebrow.toUpperCase()}</Text> : null}
-      <Text style={styles.title}>{title}</Text>
-      {body ? <Text style={styles.body}>{body}</Text> : null}
+      <Rise delay={30}>
+        <Text style={styles.title}>{title}</Text>
+      </Rise>
+      {body ? (
+        <Rise delay={90}>
+          <Text style={styles.body}>{body}</Text>
+        </Rise>
+      ) : null}
     </View>
   );
 }
@@ -65,8 +71,30 @@ export function OptionCard({ title, description, icon: Glyph, leading, selected,
   );
 }
 
+/** Fades and lifts its content in after `delay` ms (used to cascade a step's parts). */
+export function Rise({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
+  const [v] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    Animated.timing(v, { toValue: 1, duration: 380, delay, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [v, delay]);
+  return (
+    <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }}>
+      {children}
+    </Animated.View>
+  );
+}
+
+/** Answer list: cards cascade in one after another. */
 export function Options({ children }: { children: ReactNode }) {
-  return <View style={{ gap: space.sm + 2 }}>{children}</View>;
+  return (
+    <View style={{ gap: space.sm + 2 }}>
+      {Children.toArray(children).map((child, i) => (
+        <Rise key={i} delay={140 + i * 55}>
+          {child}
+        </Rise>
+      ))}
+    </View>
+  );
 }
 
 type StepperProps = {
