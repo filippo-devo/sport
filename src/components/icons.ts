@@ -71,3 +71,7 @@ export { InstagramLogoIcon } from 'phosphor-react-native/src/icons/InstagramLogo
 export { ChecksIcon } from 'phosphor-react-native/src/icons/Checks';
 export { InfoIcon } from 'phosphor-react-native/src/icons/Info';
 export { ArrowUUpLeftIcon } from 'phosphor-react-native/src/icons/ArrowUUpLeft';
+export { BuildingsIcon } from 'phosphor-react-native/src/icons/Buildings';
+export { StorefrontIcon } from 'phosphor-react-native/src/icons/Storefront';
+export { GarageIcon } from 'phosphor-react-native/src/icons/Garage';
+export { NavigationArrowIcon } from 'phosphor-react-native/src/icons/NavigationArrow';
