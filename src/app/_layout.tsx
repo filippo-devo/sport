@@ -1,10 +1,12 @@
 import { useFonts } from '@expo-google-fonts/barlow';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useCoachSync } from '../backend/sync';
+import { ONBOARDING_PREVIEW } from '../onboarding/model';
 import { useReminderSync } from '../lib/reminders';
 import { setDecimalSeparator } from '../lib/units';
 import { useHydrated, useStore } from '../store';
@@ -22,12 +24,14 @@ export default function RootLayout() {
 function App() {
   useReminderSync();
   useCoachSync();
+  useOnboardingGate();
 
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="workout/index" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
         <Stack.Screen name="exercise-picker" options={{ presentation: 'modal' }} />
         <Stack.Screen name="add-meal" options={{ presentation: 'modal' }} />
@@ -38,4 +42,17 @@ function App() {
       </Stack>
     </SafeAreaProvider>
   );
+}
+
+/**
+ * First launch: open onboarding. Only for a fresh install (no name, no workouts), so people
+ * who already use the app are not sent through it after this ships.
+ */
+function useOnboardingGate() {
+  const needs = useStore((s) => ONBOARDING_PREVIEW || (!s.settings.onboarded && !s.settings.name && s.sessions.length === 0));
+  useEffect(() => {
+    if (needs) router.replace('/onboarding');
+    // Only on launch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 }

@@ -1,6 +1,8 @@
 // Domain model. Everything is stored locally (see src/store).
 // Weights are always stored in kilograms; the UI converts to the user's unit.
 
+import type { OnboardingProfile } from '../onboarding/model';
+
 export type Lang = 'en' | 'pl';
 export type Localized = Record<Lang, string>;
 export type LocalizedList = Record<Lang, string[]>;
@@ -212,6 +214,10 @@ export type Settings = {
   photoEveryDays: number;
   /** Profile picture (a private copy, or a data URI on web). */
   avatarUri?: string;
+  /** Set when the onboarding flow has been completed (or skipped). */
+  onboarded?: boolean;
+  /** Answers from onboarding that have no other home yet (kept for the AI trainer). */
+  profile?: OnboardingProfile;
   /** Figure on the exercise muscle map; male when unset. */
   bodySex?: BodySex;
   /** Gyms the user trains at, main one first. */

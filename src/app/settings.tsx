@@ -1,8 +1,9 @@
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
-import { TrashIcon } from '../components/icons';
+import { ArrowsClockwiseIcon, TrashIcon } from '../components/icons';
 import { Button, Card, Divider, Segmented, SectionTitle } from '../components/ui/controls';
 import { NavBar } from '../components/ui/headers';
 import { Screen } from '../components/ui/layout';
@@ -87,6 +88,7 @@ export default function SettingsScreen() {
 
       <SectionTitle style={styles.section} title={t('profile.data')} />
       <View style={styles.dataButtons}>
+        <Button label={t('profile.onboarding')} variant="secondary" icon={ArrowsClockwiseIcon} onPress={() => router.push('/onboarding')} />
         <Button label={t('profile.reset')} variant="danger" icon={TrashIcon} onPress={() => setConfirm(true)} />
       </View>
       <Text style={styles.version}>GameChanger · {t('profile.version', { v: Constants.expoConfig?.version ?? '1.0.0' })}</Text>
