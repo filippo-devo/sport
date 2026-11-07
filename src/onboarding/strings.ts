@@ -102,6 +102,9 @@ const en = {
   place_both: 'Both',
   place_both_d: 'Gym most of the time, home when needed.',
 
+  gymTitle: 'Which gym is yours?',
+  gymBody: 'Find it by name or pick one nearby, so the plan fits the equipment. You can change it later in Profile.',
+  gymSkip: 'Skip for now',
   daysTitle: 'Which days can you train?',
   daysBody: 'Your plan will put workouts on these days.',
   daysCount: '{n} workouts a week',
@@ -277,6 +280,9 @@ const pl: Record<OKey, string> = {
   place_both: 'Tu i tu',
   place_both_d: 'Zwykle siłownia, czasem dom.',
 
+  gymTitle: 'Która siłownia jest Twoja?',
+  gymBody: 'Wyszukaj ją po nazwie albo wybierz z pobliskich, żeby plan pasował do sprzętu. Zmienisz to później w Profilu.',
+  gymSkip: 'Pomiń na razie',
   daysTitle: 'W które dni możesz trenować?',
   daysBody: 'Plan ułoży treningi właśnie na te dni.',
   daysCount: '{n} treningi w tygodniu',

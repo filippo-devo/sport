@@ -1,4 +1,4 @@
-import type { Goals, Program, ReminderSettings, Units } from '../data/types';
+import type { Goals, MyGym, Program, ReminderSettings, Units } from '../data/types';
 
 /**
  * Onboarding answers. Everything here is either turned into real app settings on finish
@@ -26,6 +26,8 @@ export type OnboardingAnswers = {
   experience: Experience;
   pushups: Pushups;
   place: Place;
+  /** Gyms picked in the gym search (skipped when training only at home). */
+  gyms: MyGym[];
   /** Index 0 = Monday … 6 = Sunday. */
   days: number[];
   sessionMin: number;
@@ -54,6 +56,7 @@ export const DEFAULT_ANSWERS: OnboardingAnswers = {
   experience: 'intermediate',
   pushups: '6-15',
   place: 'gym',
+  gyms: [],
   days: [0, 2, 4],
   sessionMin: 60,
   activity: 'light',

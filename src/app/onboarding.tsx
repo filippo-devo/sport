@@ -38,6 +38,7 @@ import {
   TrophyIcon,
   type Icon,
 } from '../components/icons';
+import { GymFinder } from '../components/GymFinder';
 import { Button, Segmented } from '../components/ui/controls';
 import { useLayout } from '../components/ui/layout';
 import { Ring } from '../components/ui/Ring';
@@ -90,6 +91,7 @@ const STEPS = [
   'experience',
   'pushups',
   'place',
+  'gym',
   'days',
   'length',
   'activity',
@@ -190,8 +192,10 @@ export default function OnboardingScreen() {
       if (!touched.water) set({ waterMl: suggestWater(cur.weightKg, cur.days.length) });
       if (!touched.steps) set({ steps: suggestSteps(cur.activity) });
     }
-    go(index + 1);
+    // The gym search only makes sense for people who train at a gym.
+    go(index + (step === 'place' && cur.place === 'home' ? 2 : 1));
   };
+  const back = () => go(index - (step === 'done' || (step === 'days' && a.place === 'home') ? 2 : 1));
 
   // Single-choice steps: tapping an answer selects it and moves on (no "Continue" button).
   const [answered, setAnswered] = useState<StepId[]>([]);
@@ -211,7 +215,7 @@ export default function OnboardingScreen() {
       return;
     }
     const s = useStore.getState();
-    s.setSettings({ name: a.name.trim(), units: a.units, onboarded: true, profile: profileFrom(a) });
+    s.setSettings({ name: a.name.trim(), units: a.units, onboarded: true, profile: profileFrom(a), ...(a.gyms.length ? { myGyms: a.gyms } : null) });
     s.setGoals({
       kcal: a.kcal,
       protein: a.protein,
@@ -490,6 +494,13 @@ export default function OnboardingScreen() {
           </>
         );
       }
+      case 'gym':
+        return (
+          <>
+            <StepTitle title={ot('gymTitle')} body={ot('gymBody')} />
+            <GymFinder gyms={a.gyms} onChange={(gyms) => set({ gyms })} showSaved={false} />
+          </>
+        );
       case 'days':
         return (
           <>
@@ -768,7 +779,8 @@ export default function OnboardingScreen() {
     }
     if (step === 'intro') return <SlideToContinue label={ot('slideToContinue')} onDone={() => next()} />;
     if (CHOICE_STEPS.includes(step)) return <Text style={styles.pickHint}>{ot('pickOne')}</Text>;
-    return <ChargeButton label={ot('next')} onPress={() => next()} disabled={!canContinue} resetKey={step} />;
+    const label = step === 'gym' && a.gyms.length === 0 ? ot('gymSkip') : ot('next');
+    return <ChargeButton label={label} onPress={() => next()} disabled={!canContinue} resetKey={step} />;
   };
 
   return (
@@ -778,7 +790,7 @@ export default function OnboardingScreen() {
         {showChrome && (
           <View style={[styles.topBar, { paddingTop: insets.top + space.xs, paddingHorizontal: gutter }]}>
             <View style={styles.topRow}>
-              <Pressable accessibilityRole="button" accessibilityLabel={ot('back')} onPress={() => go(step === 'done' ? index - 2 : index - 1)} hitSlop={10} style={styles.back}>
+              <Pressable accessibilityRole="button" accessibilityLabel={ot('back')} onPress={back} hitSlop={10} style={styles.back}>
                 <CaretLeftIcon size={20} color={colors.textPrimary} weight="bold" />
               </Pressable>
               <Text style={styles.stepLabel}>{counted >= 0 ? ot('step', { n: counted + 1, total: COUNTED.length }) : ''}</Text>
