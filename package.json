@@ -25,6 +25,7 @@
     "expo-router": "~58.0.27",
     "expo-sensors": "~58.0.4",
     "expo-sharing": "~58.0.20",
+    "expo-speech-recognition": "~58.0.1",
     "expo-status-bar": "~58.0.4",
     "expo-updates": "~58.0.18",
     "html2canvas-pro": "^2.5.0",
