@@ -67,6 +67,13 @@
         {
           "color": "#D2FE08"
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "GameChanger uses the microphone so you can log meals and sets by voice.",
+          "speechRecognitionPermission": "GameChanger turns what you say into meal and set entries."
+        }
       ]
     ],
     "scheme": "sport",

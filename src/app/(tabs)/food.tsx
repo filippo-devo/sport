@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
@@ -24,6 +24,8 @@ import { WATER } from '../../components/nutrition/WaterCard';
 import { Card, IconButton } from '../../components/ui/controls';
 import { TabHeader } from '../../components/ui/headers';
 import { Screen } from '../../components/ui/layout';
+import { useSpokenMeal } from '../../components/voice/useSpokenMeal';
+import { VoiceSheet } from '../../components/voice/VoiceSheet';
 import type { MealType } from '../../data/types';
 import { useT } from '../../i18n';
 import { dayKey, fromKey } from '../../lib/date';
@@ -55,6 +57,8 @@ export default function FoodScreen() {
   const totals = sumNutrients(entries);
   const left = goals.kcal - totals.kcal;
   const addMeal = (params: Record<string, string> = {}) => router.push({ pathname: '/add-meal', params });
+  const [voice, setVoice] = useState(false);
+  const saveSpoken = useSpokenMeal();
 
   return (
     <Screen tabBar>
@@ -89,7 +93,7 @@ export default function FoodScreen() {
       {/* Quick log */}
       <View style={styles.quick}>
         <Quick icon={MagnifyingGlassIcon} label={t('food.quickSearch')} onPress={() => addMeal({ mode: 'search' })} />
-        <Quick icon={MicrophoneIcon} label={t('food.quickVoice')} onPress={() => addMeal({ mode: 'voice' })} />
+        <Quick icon={MicrophoneIcon} label={t('food.quickVoice')} onPress={() => setVoice(true)} />
         <Quick icon={ClockCounterClockwiseIcon} label={t('food.quickRecent')} onPress={() => addMeal()} />
         <Quick icon={LightningIcon} label={t('food.quickFast')} onPress={() => addMeal({ mode: 'manual' })} />
       </View>
@@ -142,6 +146,14 @@ export default function FoodScreen() {
         <WaterTile date={date} />
         <SupplementsTile date={date} />
       </View>
+
+      <VoiceSheet
+        visible={voice}
+        onClose={() => setVoice(false)}
+        title={t('voice.mealTitle')}
+        examples={[t('voice.mealExample1'), t('voice.mealExample2')]}
+        onSpoken={saveSpoken}
+      />
     </Screen>
   );
 }

@@ -201,6 +201,9 @@ export type ReminderSettings = {
   supplements: { on: boolean };
 };
 
+/** Which figure the muscle map draws. */
+export type BodySex = 'male' | 'female';
+
 export type Settings = {
   name: string;
   lang: Lang;
@@ -215,6 +218,26 @@ export type Settings = {
   onboarded?: boolean;
   /** Answers from onboarding that have no other home yet (kept for the AI trainer). */
   profile?: OnboardingProfile;
+  /** Figure on the exercise muscle map; male when unset. */
+  bodySex?: BodySex;
+  /** Gyms the user trains at, main one first. */
+  myGyms?: MyGym[];
+};
+
+/** Size of the place someone trains at; decides what equipment can be assumed. */
+export type GymKind = 'large' | 'small' | 'garage';
+
+/** A gym the user picked from the OpenStreetMap search, or their own home/garage gym (no place data). */
+export type MyGym = {
+  /** 'osm:node:123' for a searched place, 'garage:<timestamp>' for a home gym. */
+  id: string;
+  name: string;
+  kind: GymKind;
+  address?: string;
+  city?: string;
+  lat?: number;
+  lng?: number;
+  addedAt: number;
 };
 
 /** Small stat tiles at the top of Today (the user picks up to three). */

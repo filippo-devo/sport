@@ -98,6 +98,14 @@ export default function ProfileScreen() {
         <ListRow icon={UsersIcon} tint={colors.accent} label={t('profile.account')} onPress={() => router.push('/account')} />
         <Divider />
         <ListRow
+          icon={BarbellIcon}
+          tint={colors.accent}
+          label={t('profile.myGyms')}
+          sub={s.settings.myGyms?.[0]?.name ?? t('profile.myGymsEmpty')}
+          onPress={() => router.push('/gym/mine')}
+        />
+        <Divider />
+        <ListRow
           icon={QrCodeIcon}
           tint={colors.success}
           label={t('profile.gymVisits')}

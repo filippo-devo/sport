@@ -8,6 +8,11 @@ import type { ImageSourcePropType } from 'react-native';
  */
 export const WORKOUT_IMAGES: Record<string, ImageSourcePropType> = {
   'upper-push': require('../../assets/workouts/upper-push.jpg'),
+  'pull-arms': require('../../assets/workouts/pull-arms.jpg'),
+  'legs-glutes': require('../../assets/workouts/legs-glutes.jpg'),
+  'lower-a': require('../../assets/workouts/lower-a.jpg'),
+  'full-a': require('../../assets/workouts/full-a.jpg'),
+  'full-b': require('../../assets/workouts/full-b.jpg'),
 };
 
 /**
@@ -16,4 +21,9 @@ export const WORKOUT_IMAGES: Record<string, ImageSourcePropType> = {
  */
 export const TRAIN_IMAGES: Record<string, ImageSourcePropType> = {
   'upper-push': require('../../assets/workouts/upper-push-train.jpg'),
+  'pull-arms': require('../../assets/workouts/pull-arms-train.jpg'),
+  'legs-glutes': require('../../assets/workouts/legs-glutes-train.jpg'),
+  'lower-a': require('../../assets/workouts/lower-a-train.jpg'),
+  'full-a': require('../../assets/workouts/full-a-train.jpg'),
+  'full-b': require('../../assets/workouts/full-b-train.jpg'),
 };

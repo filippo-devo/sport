@@ -4,7 +4,8 @@ import { EXERCISE_BY_ID } from '../data/exercises';
 import type { RoutineItem, Units } from '../data/types';
 import { useT } from '../i18n';
 import { formatWeight } from '../lib/units';
-import { colors, fonts, radius, space, type } from '../theme/tokens';
+import { colors, space, type } from '../theme/tokens';
+import { ExerciseThumb } from './muscles/ExerciseMedia';
 import { SetBars } from './SetBars';
 
 type Props = {
@@ -33,10 +34,7 @@ export function ExerciseRow({ item, index, weight, units, onPress }: Props) {
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={`${index + 1}. ${L(e.name)}, ${meta}`}
     >
-      <View style={styles.tile}>
-        <Text style={styles.index}>{String(index + 1).padStart(2, '0')}</Text>
-        <View style={styles.tileRule} />
-      </View>
+      <ExerciseThumb exercise={e} size={TILE} label={String(index + 1).padStart(2, '0')} />
       <View style={styles.text}>
         <Text style={styles.kicker} numberOfLines={1}>
           {t(`muscle.${e.muscle}`)} · {t(`equipment.${e.equipment}`)}
@@ -64,19 +62,6 @@ const styles = StyleSheet.create({
     gap: space.lg,
     paddingVertical: space.md,
   },
-  tile: {
-    width: TILE,
-    height: TILE,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: space.xs,
-  },
-  index: { fontFamily: fonts.semibold, fontSize: 20, color: colors.textPrimary, letterSpacing: 0.5 },
-  tileRule: { width: 16, height: 2, borderRadius: 1, backgroundColor: colors.accent },
   text: { flex: 1, minWidth: 0 },
   kicker: { ...type.caption, color: colors.textSecondary },
   name: { ...type.itemTitle, color: colors.textPrimary, marginTop: 2 },

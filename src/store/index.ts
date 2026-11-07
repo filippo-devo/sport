@@ -71,6 +71,7 @@ type Actions = {
   toggleSet: (ex: number, set: number) => void;
   addSet: (ex: number) => void;
   removeSet: (ex: number, set: number) => void;
+  setExerciseRest: (ex: number, sec: number) => void;
   addExercise: (exerciseId: string) => void;
   removeExercise: (ex: number) => void;
   adjustRest: (deltaSec: number) => void;
@@ -264,6 +265,7 @@ export const useStore = create<AppState>()(
 
         addSet: (ex) => patchExercise(ex, (e) => ({ ...e, sets: [...e.sets, { done: false }] })),
         removeSet: (ex, i) => patchExercise(ex, (e) => ({ ...e, sets: e.sets.filter((_, j) => j !== i) })),
+        setExerciseRest: (ex, sec) => patchExercise(ex, (e) => ({ ...e, restSec: sec })),
 
         addExercise: (exerciseId) =>
           patchActive((a) => ({
