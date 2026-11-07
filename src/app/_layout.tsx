@@ -1,10 +1,12 @@
 import { useFonts } from '@expo-google-fonts/barlow';
 import { Stack } from 'expo-router';
+import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useCoachSync } from '../backend/sync';
+import { startHealthSync } from '../health/sync';
 import { useReminderSync } from '../lib/reminders';
 import { setDecimalSeparator } from '../lib/units';
 import { useHydrated, useStore } from '../store';
@@ -22,6 +24,7 @@ export default function RootLayout() {
 function App() {
   useReminderSync();
   useCoachSync();
+  useEffect(() => startHealthSync(), []);
 
   return (
     <SafeAreaProvider>

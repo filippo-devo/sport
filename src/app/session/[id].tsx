@@ -9,6 +9,7 @@ import { NavBar } from '../../components/ui/headers';
 import { Screen } from '../../components/ui/layout';
 import { ConfirmSheet } from '../../components/ui/sheets';
 import { EXERCISE_BY_ID } from '../../data/exercises';
+import { useHeartRate } from '../../health/useHealth';
 import type { SetEntry } from '../../data/types';
 import { useT } from '../../i18n';
 import { hhmm } from '../../lib/date';
@@ -28,6 +29,7 @@ export default function SessionScreen() {
   const [confirm, setConfirm] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const session = sessions.find((s) => s.id === id);
+  const hr = useHeartRate(session?.startedAt ?? 0, session?.endedAt ?? 0);
   if (!session) return <Screen top={<NavBar />}>{null}</Screen>;
 
   const prs = sessionPRs(sessions, session);
@@ -77,6 +79,11 @@ export default function SessionScreen() {
         <Stat label={t('workout.sets')} value={String(doneSets(session.exercises))} />
         <Stat label={t('summary.prsShort')} value={String(prs.length)} accent={prs.length > 0} />
       </Card>
+      {hr && (
+        <Text style={styles.heart}>
+          {t('health.heartRate', { avg: hr.avg, max: hr.max })}
+        </Text>
+      )}
 
       <Button
         label={t('share.open')}
@@ -186,6 +193,7 @@ const styles = StyleSheet.create({
   heroKicker: { ...type.badge, color: colors.accent, fontSize: 13 },
   heroTitle: { ...type.heroTitle, color: colors.textPrimary, textAlign: 'center' },
   date: { ...type.body, color: colors.textSecondary, marginTop: space.sm },
+  heart: { ...type.caption, color: colors.textSecondary, textAlign: 'center', marginTop: space.sm },
   stats: { flexDirection: 'row', marginTop: space.xl, paddingHorizontal: space.md },
   stat: { flex: 1, gap: 2, minWidth: 0 },
   statLabel: { ...type.caption, color: colors.textSecondary },

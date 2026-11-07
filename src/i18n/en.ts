@@ -786,6 +786,17 @@ export const en = {
   'voice.setsSaved': 'Logged {n} set|Logged {n} sets',
   'voice.setsNotUnderstood': 'Could not understand the set',
   'voice.setLine': 'Set {n} · {v}',
+  'health.title': 'Apple Health',
+  'health.connect': 'Connect to Apple Health',
+  'health.what': 'Saves workouts, meals, water and weight to Health. Reads steps, active calories, heart rate and weight from your scale.',
+  'health.needsBuild': 'Works in the App Store / TestFlight app, not in Expo Go.',
+  'health.denied': 'No access. Allow GameChanger in the Health app: Profile → Apps → GameChanger.',
+  'health.todayLine': 'Today: {steps} steps · {kcal} active kcal',
+  'health.resting': 'resting HR {n}',
+  'health.synced': 'Synced at {time} · tap to sync now',
+  'health.syncing': 'Syncing…',
+  'health.error': 'Sync failed: {e} · tap to retry',
+  'health.heartRate': 'Heart rate: avg {avg} · max {max} bpm',
 } as const;
 
 export type Dict = Record<keyof typeof en, string>;

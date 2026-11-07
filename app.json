@@ -7,7 +7,13 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.filiocha.gamechanger",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.filiocha.gamechanger"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -73,6 +79,14 @@
         {
           "microphonePermission": "GameChanger uses the microphone so you can log meals and sets by voice.",
           "speechRecognitionPermission": "GameChanger turns what you say into meal and set entries."
+        }
+      ],
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "GameChanger reads your steps, active calories, heart rate and weight from Apple Health to show them next to your training and nutrition.",
+          "NSHealthUpdateUsageDescription": "GameChanger saves your workouts, meals, water and weigh-ins to Apple Health.",
+          "background": false
         }
       ]
     ],

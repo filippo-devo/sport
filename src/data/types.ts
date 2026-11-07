@@ -98,7 +98,8 @@ export type ActiveWorkout = {
   rest: RestTimer | null;
 };
 
-export type WeighIn = { date: string; kg: number };
+/** `source: 'health'` marks a weigh-in imported from Apple Health (never written back). */
+export type WeighIn = { date: string; kg: number; source?: 'health' };
 
 export type PhotoPose = 'front' | 'side' | 'back';
 export type Photo = { id: string; date: string; uri: string; pose?: PhotoPose };
@@ -214,6 +215,8 @@ export type Settings = {
   avatarUri?: string;
   /** Figure on the exercise muscle map; male when unset. */
   bodySex?: BodySex;
+  /** Apple Health sync turned on by the user (iPhone app build only). */
+  health?: boolean;
 };
 
 /** Small stat tiles at the top of Today (the user picks up to three). */

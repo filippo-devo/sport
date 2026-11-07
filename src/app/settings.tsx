@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import { useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
+import { HealthSettings } from '../components/HealthSettings';
 import { TrashIcon } from '../components/icons';
 import { Button, Card, Divider, Segmented, SectionTitle } from '../components/ui/controls';
 import { NavBar } from '../components/ui/headers';
@@ -84,6 +85,8 @@ export default function SettingsScreen() {
           />
         </View>
       </Card>
+
+      <HealthSettings />
 
       <SectionTitle style={styles.section} title={t('profile.data')} />
       <View style={styles.dataButtons}>
