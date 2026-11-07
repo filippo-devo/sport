@@ -70,3 +70,4 @@ export { ImagesIcon } from 'phosphor-react-native/src/icons/Images';
 export { InstagramLogoIcon } from 'phosphor-react-native/src/icons/InstagramLogo';
 export { ChecksIcon } from 'phosphor-react-native/src/icons/Checks';
 export { InfoIcon } from 'phosphor-react-native/src/icons/Info';
+export { ArrowUUpLeftIcon } from 'phosphor-react-native/src/icons/ArrowUUpLeft';

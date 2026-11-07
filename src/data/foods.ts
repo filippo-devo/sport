@@ -49,6 +49,17 @@ export const FOODS: Food[] = [
   food('mozzarella', 'Mozzarella, light', 'Mozzarella light', 165, 19, 2, 9, 0, 1, 60),
   food('lentil-soup', 'Lentil soup', 'Zupa z soczewicy', 72, 4.5, 11, 1, 3.5, 1.5, 350),
   food('milk', 'Milk 2%', 'Mleko 2%', 50, 3.4, 4.8, 2, 0, 5, 250),
+  // Common Polish dishes, so spoken meals ("na obiad schabowy z ziemniakami") can be logged.
+  food('pork-cutlet', 'Breaded pork cutlet', 'Kotlet schabowy', 260, 18, 10, 17, 0.5, 0.5, 150),
+  food('pierogi', 'Pierogi ruskie', 'Pierogi ruskie', 200, 6, 32, 5, 2, 1, 250),
+  food('pizza', 'Pizza margherita', 'Pizza margherita', 266, 11, 33, 10, 2.3, 3.6, 300),
+  food('kebab', 'Kebab in a bun', 'Kebab w bułce', 215, 12, 20, 10, 1.5, 2, 350),
+  food('burger', 'Beef burger', 'Burger wołowy', 250, 13, 24, 11, 1.5, 5, 220),
+  food('fries', 'French fries', 'Frytki', 312, 3.4, 41, 15, 3.8, 0.3, 150),
+  food('tomato-soup', 'Tomato soup with pasta', 'Zupa pomidorowa z makaronem', 60, 1.8, 8.5, 2, 0.8, 3, 350),
+  food('chicken-soup', 'Chicken broth with noodles', 'Rosół z makaronem', 45, 3, 5, 1.5, 0.3, 0.5, 350),
+  food('pancakes', 'Crepes', 'Naleśniki', 220, 6, 30, 8, 1, 8, 200),
+  food('quark', 'Quark, semi-skimmed', 'Twaróg półtłusty', 133, 18.7, 3.7, 4.7, 0, 3.7, 100),
 ];
 
 export const FOOD_BY_ID: Record<string, Food> = Object.fromEntries(FOODS.map((f) => [f.id, f]));

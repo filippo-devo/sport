@@ -8,12 +8,13 @@ import { useT } from '../../i18n';
 import { clock } from '../../lib/date';
 import { formatNumber, fromDisplayWeight, roundWeight, toDisplayWeight } from '../../lib/units';
 import { colors, fonts, layout, radius, space, type } from '../../theme/tokens';
-import { CaretLeftIcon, CheckIcon, ChecksIcon, DotsThreeIcon, InfoIcon, PlusIcon, TimerIcon } from '../icons';
+import { CaretLeftIcon, CheckIcon, ChecksIcon, DotsThreeIcon, InfoIcon, MicrophoneIcon, PlusIcon, TimerIcon } from '../icons';
 import { ExerciseBackdrop, ExerciseThumb } from '../muscles/ExerciseMedia';
 import { MuscleRing } from '../muscles/MuscleMap';
 import { Chip, IconButton } from '../ui/controls';
 import { useLayout } from '../ui/layout';
 import { Sheet } from '../ui/sheets';
+import { VoiceSheet, type VoiceOutcome } from '../voice/VoiceSheet';
 import { NumCell } from './NumCell';
 import { RestTimerBar } from './RestTimerBar';
 import { nextSetIndex, setText } from './summary';
@@ -42,6 +43,8 @@ type Props = {
   onOpenNext: () => void;
   onAdjustRest: (delta: number) => void;
   onSkipRest: () => void;
+  /** "Zrobiłem 10 powtórzeń z 60 kg": logs the sets at once. */
+  onVoice: (text: string) => VoiceOutcome;
 };
 
 /** Single exercise during a live workout: photo hero, big set cells, "Log set" bar. */
@@ -50,6 +53,7 @@ export function ExerciseFocus(p: Props) {
   const { t, L } = tr;
   const { insets, frameWidth, gutter } = useLayout();
   const [restSheet, setRestSheet] = useState(false);
+  const [voice, setVoice] = useState(false);
   const [barH, setBarH] = useState(0);
   const { exercise: ex, entry } = p;
   const tracking = ex.tracking;
@@ -220,6 +224,7 @@ export function ExerciseFocus(p: Props) {
             </Pressable>
           )}
           <View style={styles.buttons}>
+            <IconButton icon={MicrophoneIcon} label={t('voice.setsTitle')} size={layout.ctaHeight + 4} tone="surface" onPress={() => setVoice(true)} />
             <Pressable onPress={onPrimary} accessibilityRole="button" style={({ pressed }) => [styles.primary, pressed && { opacity: 0.9 }]}>
               <Text style={styles.primaryText}>{primaryLabel}</Text>
             </Pressable>
@@ -229,6 +234,14 @@ export function ExerciseFocus(p: Props) {
           </View>
         </View>
       </View>
+
+      <VoiceSheet
+        visible={voice}
+        onClose={() => setVoice(false)}
+        title={t('voice.setsTitle')}
+        examples={tracking === 'time' ? [t('voice.timeExample')] : [t('voice.setsExample1'), t('voice.setsExample2')]}
+        onSpoken={p.onVoice}
+      />
 
       <Sheet visible={restSheet} onClose={() => setRestSheet(false)} title={t('workout.restTitle')}>
         <View style={styles.restOptions}>

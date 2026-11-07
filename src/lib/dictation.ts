@@ -61,3 +61,65 @@ export function useDictation(lang: Lang, onText: (text: string) => void) {
 
   return { supported: inAppDictation(), listening, error, start, stop };
 }
+
+/**
+ * One spoken command: start() listens until the speaker pauses, `transcript` updates live,
+ * and `onFinal` gets the whole sentence once recognition ends.
+ */
+export function useVoiceCapture(lang: Lang, onFinal: (text: string) => void) {
+  const [listening, setListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const rec = useRef<Recognition | null>(null);
+  const text = useRef('');
+  const cb = useRef(onFinal);
+  useEffect(() => {
+    cb.current = onFinal;
+  }, [onFinal]);
+  useEffect(() => () => rec.current?.stop(), []);
+
+  const start = () => {
+    const Ctor = recognitionCtor();
+    if (!Ctor) return;
+    rec.current?.stop();
+    const r = new Ctor();
+    r.lang = lang === 'pl' ? 'pl-PL' : 'en-US';
+    r.interimResults = true;
+    r.continuous = false;
+    text.current = '';
+    r.onresult = (e) => {
+      text.current = Array.from(e.results)
+        .map((res) => res[0]?.transcript ?? '')
+        .join(' ')
+        .trim();
+      setTranscript(text.current);
+    };
+    r.onerror = (e) => {
+      if (e.error !== 'no-speech' && e.error !== 'aborted') setError(e.error);
+    };
+    r.onend = () => {
+      setListening(false);
+      if (rec.current === r && text.current) cb.current(text.current);
+      rec.current = null;
+    };
+    rec.current = r;
+    setTranscript('');
+    setError(null);
+    setListening(true);
+    try {
+      r.start();
+    } catch {
+      setListening(false);
+      setError('start');
+    }
+  };
+  const stop = () => rec.current?.stop();
+  const cancel = () => {
+    const r = rec.current;
+    rec.current = null;
+    r?.stop();
+    setListening(false);
+  };
+
+  return { supported: inAppDictation(), listening, transcript, error, start, stop, cancel };
+}

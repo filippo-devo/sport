@@ -8,6 +8,7 @@ import { Button, IconButton } from '../../components/ui/controls';
 import { NavBar } from '../../components/ui/headers';
 import { BottomFade, Screen, useLayout } from '../../components/ui/layout';
 import { ConfirmSheet, Sheet } from '../../components/ui/sheets';
+import { logSpokenSets } from '../../components/voice/spokenSets';
 import { ExerciseFocus } from '../../components/workout/ExerciseFocus';
 import { RestTimerBar } from '../../components/workout/RestTimerBar';
 import { isComplete } from '../../components/workout/summary';
@@ -22,7 +23,8 @@ import { doneSets, lastPerformance, setVolume } from '../../store/derived';
 import { colors, fonts, layout, radius, space, type } from '../../theme/tokens';
 
 export default function WorkoutScreen() {
-  const { t, tn, L } = useT();
+  const tr = useT();
+  const { t, tn, L } = tr;
   const { insets } = useLayout();
   const active = useStore((s) => s.active);
   const sessions = useStore((s) => s.sessions);
@@ -159,6 +161,11 @@ export default function WorkoutScreen() {
           onOpenNext={() => setFocus(nextIndex >= 0 ? nextIndex : null)}
           onAdjustRest={actions.adjustRest}
           onSkipRest={actions.skipRest}
+          onVoice={(text) => {
+            const r = logSpokenSets(tr, i, text);
+            if (r.ok) buzz();
+            return r;
+          }}
         />
         {sheets}
       </>

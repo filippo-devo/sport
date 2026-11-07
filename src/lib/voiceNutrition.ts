@@ -43,6 +43,16 @@ const NUMBER_WORDS: Record<string, number> = {
   czterysta: 400, piecset: 500, szescset: 600, siedemset: 700, osiemset: 800, dziewiecset: 900, tysiac: 1000,
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, fifteen: 15, twenty: 20,
   thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90, hundred: 100,
+  // Teens and the genitive forms used in speech ("z sześćdziesięciu kilo", "dwunastu powtórzeń").
+  jedenascie: 11, dwanascie: 12, trzynascie: 13, czternascie: 14, szesnascie: 16, siedemnascie: 17, osiemnascie: 18,
+  dziewietnascie: 19, dwoch: 2, trzech: 3, czterech: 4, pieciu: 5, szesciu: 6, siedmiu: 7, osmiu: 8, dziewieciu: 9,
+  dziesieciu: 10, jedenastu: 11, dwunastu: 12, trzynastu: 13, czternastu: 14, pietnastu: 15, szesnastu: 16,
+  siedemnastu: 17, osiemnastu: 18, dziewietnastu: 19, dwudziestu: 20, trzydziestu: 30, czterdziestu: 40,
+  piecdziesieciu: 50, szescdziesieciu: 60, siedemdziesieciu: 70, osiemdziesieciu: 80, dziewiecdziesieciu: 90,
+  stu: 100, dwustu: 200, jedno: 1, jednego: 1,
+  dziesiecioma: 10, dwunastoma: 12, pietnastoma: 15, dwudziestoma: 20, trzydziestoma: 30, czterdziestoma: 40,
+  piecdziesiecioma: 50, szescdziesiecioma: 60, siedemdziesiecioma: 70, osiemdziesiecioma: 80, dziewiecdziesiecioma: 90, stoma: 100,
+  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19,
 };
 
 function macroOf(token: string): Macro | undefined {
@@ -51,7 +61,7 @@ function macroOf(token: string): Macro | undefined {
 }
 
 /** Reads a number at tokens[i] (digits, "1,5", or number words like "trzydzieści pięć"). */
-function readNumber(tokens: string[], i: number): { value: number; next: number } | undefined {
+export function readNumber(tokens: string[], i: number): { value: number; next: number } | undefined {
   const t = tokens[i];
   if (!t) return undefined;
   const digits = t.match(/^(\d+(?:[.,]\d+)?)(g|kcal)?$/);
